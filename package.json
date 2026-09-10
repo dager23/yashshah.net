@@ -1,0 +1,32 @@
+{
+  "name": "yashshah.net",
+  "type": "module",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Personal site for Yash Shah — yashshah.net",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build && node scripts/check-todos.mjs",
+    "preview": "astro preview",
+    "check": "astro check",
+    "sync": "astro sync",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "gen:images": "node scripts/gen-images.mjs"
+  },
+  "dependencies": {
+    "@astrojs/rss": "4.0.19",
+    "@astrojs/sitemap": "3.7.4",
+    "@fontsource-variable/jetbrains-mono": "5.3.0",
+    "@fontsource-variable/newsreader": "5.3.0",
+    "astro": "7.3.2"
+  },
+  "devDependencies": {
+    "@astrojs/check": "0.9.10",
+    "@resvg/resvg-js": "2.6.2",
+    "prettier": "3.9.6",
+    "prettier-plugin-astro": "1.0.0",
+    "sharp": "0.35.4",
+    "typescript": "5.9.3"
+  }
+}
