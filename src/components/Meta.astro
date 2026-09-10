@@ -1,0 +1,67 @@
+---
+import { site, links } from '../data/site';
+import { publications } from '../data/publications';
+
+interface Props {
+  title: string;
+  description: string;
+  canonical: string;
+  ogType?: 'website' | 'article';
+}
+
+const { title, description, canonical, ogType = 'website' } = Astro.props;
+const origin = (Astro.site ?? new URL('https://yashshah.net')).origin;
+const ogImage = `${origin}/og.png`;
+
+const sameAs = [
+  links.linkedin.enabled ? links.linkedin.href : null,
+  links.github.enabled && links.github.href ? links.github.href : null,
+  ...publications.filter((p) => p.href).map((p) => p.href),
+].filter((v): v is string => Boolean(v));
+
+const personLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Person',
+  name: site.name,
+  url: `${origin}/`,
+  jobTitle: 'SDE 2',
+  worksFor: { '@type': 'Organization', name: 'NetApp' },
+  address: {
+    '@type': 'PostalAddress',
+    addressLocality: 'Bengaluru',
+    addressCountry: 'IN',
+  },
+  alumniOf: {
+    '@type': 'CollegeOrUniversity',
+    name: 'Vellore Institute of Technology',
+  },
+  sameAs,
+};
+---
+
+<title>{title}</title>
+<meta name="description" content={description} />
+<link rel="canonical" href={canonical} />
+<meta name="author" content={site.name} />
+<meta name="color-scheme" content="light dark" />
+<meta name="theme-color" content="#fbf9f4" media="(prefers-color-scheme: light)" />
+<meta name="theme-color" content="#12120f" media="(prefers-color-scheme: dark)" />
+
+<link rel="icon" href="/favicon.ico" sizes="32x32" />
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
+<meta property="og:type" content={ogType} />
+<meta property="og:site_name" content={site.name} />
+<meta property="og:title" content={title} />
+<meta property="og:description" content={description} />
+<meta property="og:url" content={canonical} />
+<meta property="og:image" content={ogImage} />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content={title} />
+<meta name="twitter:description" content={description} />
+<meta name="twitter:image" content={ogImage} />
+
+<script type="application/ld+json" is:inline set:html={JSON.stringify(personLd)}></script>

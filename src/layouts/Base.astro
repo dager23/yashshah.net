@@ -4,19 +4,26 @@ import '../styles/tokens.css';
 import '../styles/base.css';
 import { getCollection } from 'astro:content';
 import { site, links } from '../data/site';
+import Meta from '../components/Meta.astro';
 
 interface Props {
   title?: string;
   description?: string;
+  ogType?: 'website' | 'article';
   /** current path, e.g. "/projects" — drives <link canonical> and nav state */
   path?: string;
 }
 
-const { title, description = site.tagline, path = Astro.url.pathname } = Astro.props;
+const {
+  title,
+  description = site.tagline,
+  ogType = 'website',
+  path = Astro.url.pathname,
+} = Astro.props;
 const pageTitle = title ? `${title} — ${site.name}` : `${site.name} — ${site.role}`;
 const canonical = new URL(path, Astro.site ?? 'https://yashshah.net').href.replace(
-  /\/$/,
-  ''
+  /(.)\/$/,
+  '$1'
 );
 
 const published = (await getCollection('writing')).filter((p) => !p.data.draft);
@@ -38,11 +45,13 @@ const year = new Date().getFullYear();
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{pageTitle}</title>
-    <meta name="description" content={description} />
-    <link rel="canonical" href={canonical} />
-    <meta name="author" content={site.name} />
-    <meta name="color-scheme" content="light dark" />
+
+    <Meta
+      title={pageTitle}
+      description={description}
+      canonical={canonical}
+      ogType={ogType}
+    />
 
     <link
       rel="preload"
@@ -58,13 +67,6 @@ const year = new Date().getFullYear();
       href="/fonts/jetbrains-mono-latin-wght-normal.woff2"
       crossorigin
     />
-
-    <meta property="og:type" content="website" />
-    <meta property="og:site_name" content={site.name} />
-    <meta property="og:title" content={pageTitle} />
-    <meta property="og:description" content={description} />
-    <meta property="og:url" content={canonical} />
-    <meta name="twitter:card" content="summary" />
 
     {showWriting && (
       <link
