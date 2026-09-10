@@ -1,7 +1,7 @@
 ---
 title: Effimix
 summary: A feature-fusion CNN for gastrointestinal disease classification, published in Diagnostics.
-role: Co-author — model architecture and evaluation.
+role: Co-author, model architecture and evaluation
 stack:
   - EfficientNet-B0
   - squeeze-and-excitation

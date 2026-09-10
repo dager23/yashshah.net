@@ -1,0 +1,132 @@
+---
+import '../styles/fonts.css';
+import '../styles/tokens.css';
+import '../styles/base.css';
+import { getCollection } from 'astro:content';
+import { site, links } from '../data/site';
+
+interface Props {
+  title?: string;
+  description?: string;
+  /** current path, e.g. "/projects" — drives <link canonical> and nav state */
+  path?: string;
+}
+
+const { title, description = site.tagline, path = Astro.url.pathname } = Astro.props;
+const pageTitle = title ? `${title} — ${site.name}` : `${site.name} — ${site.role}`;
+const canonical = new URL(path, Astro.site ?? 'https://yashshah.net').href.replace(
+  /\/$/,
+  ''
+);
+
+const published = (await getCollection('writing')).filter((p) => !p.data.draft);
+const showWriting = published.length > 0;
+
+const nav = [
+  { label: 'work', href: '/#experience', match: null },
+  { label: 'projects', href: '/projects', match: '/projects' },
+  ...(showWriting ? [{ label: 'writing', href: '/writing', match: '/writing' }] : []),
+];
+
+const norm = (p: string) => (p !== '/' ? p.replace(/\/$/, '') : p);
+const here = norm(path);
+const year = new Date().getFullYear();
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{pageTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <meta name="author" content={site.name} />
+    <meta name="color-scheme" content="light dark" />
+
+    <link
+      rel="preload"
+      as="font"
+      type="font/woff2"
+      href="/fonts/newsreader-latin-opsz-normal.woff2"
+      crossorigin
+    />
+    <link
+      rel="preload"
+      as="font"
+      type="font/woff2"
+      href="/fonts/jetbrains-mono-latin-wght-normal.woff2"
+      crossorigin
+    />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={site.name} />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta name="twitter:card" content="summary" />
+
+    {showWriting && (
+      <link
+        rel="alternate"
+        type="application/rss+xml"
+        title={`${site.name} — Writing`}
+        href="/rss.xml"
+      />
+    )}
+
+    <slot name="head" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">
+      Skip to content
+    </a>
+
+    <header class="masthead">
+      <div class="masthead__inner bounded">
+        <a class="wordmark" href="/">
+          {site.name}
+        </a>
+        <nav class="nav" aria-label="Primary">
+          {nav.map((item) => (
+            <a
+              href={item.href}
+              aria-current={item.match && here === item.match ? 'page' : undefined}
+            >
+              {item.label}
+            </a>
+          ))}
+          {links.linkedin.enabled && (
+            <a class="ext" href={links.linkedin.href} rel="me noopener">
+              linkedin
+            </a>
+          )}
+        </nav>
+      </div>
+    </header>
+
+    <main id="main">
+      <slot />
+    </main>
+
+    <footer class="colophon">
+      <div class="colophon__inner bounded">
+        <span>
+          © {year} {site.name}
+        </span>
+        <span>
+          {links.linkedin.enabled && (
+            <>
+              Reach me on{' '}
+              <a href={links.linkedin.href} rel="me noopener">
+                LinkedIn
+              </a>
+              .{' '}
+            </>
+          )}
+          Set in Newsreader &amp; JetBrains Mono. Built with Astro.
+        </span>
+      </div>
+    </footer>
+  </body>
+</html>

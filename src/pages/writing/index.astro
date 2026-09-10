@@ -1,0 +1,80 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+
+const posts = (await getCollection('writing'))
+  .filter((p) => !p.data.draft)
+  .sort((a, b) => b.data.pubDate.getTime() - a.data.pubDate.getTime());
+
+const fmtDate = (d: Date) =>
+  d.toLocaleDateString('en-GB', { year: 'numeric', month: 'short', day: 'numeric' });
+---
+
+<Base
+  path="/writing"
+  title="Writing"
+  description="Notes on machine-learning systems, computer vision, and the engineering around them."
+>
+  <div class="sheet">
+    <section class="row" aria-labelledby="w-label">
+      <h1 class="row__label" id="w-label">
+        Writing
+      </h1>
+      <div class="row__body">
+        {posts.length === 0 ? (
+          <p class="empty prose">Nothing published yet.</p>
+        ) : (
+          <ul class="notes">
+            {posts.map((post) => (
+              <li class="note">
+                <a class="note__title" href={`/writing/${post.id}`}>
+                  {post.data.title}
+                </a>
+                <span class="note__date">{fmtDate(post.data.pubDate)}</span>
+                <p class="note__desc prose">{post.data.description}</p>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </section>
+  </div>
+</Base>
+
+<style>
+  .empty {
+    color: var(--ink-2);
+    font-size: var(--t-md);
+  }
+  .notes {
+    list-style: none;
+  }
+  .note {
+    padding-block: var(--space-5);
+  }
+  .note:first-child {
+    padding-top: 0;
+  }
+  .note + .note {
+    border-top: var(--rule-w) solid var(--rule);
+  }
+  .note__title {
+    font-family: var(--font-serif);
+    font-size: var(--t-lg);
+    text-decoration: none;
+  }
+  .note__title:hover {
+    text-decoration: underline;
+    text-decoration-color: var(--signal);
+  }
+  .note__date {
+    margin-left: var(--space-3);
+    font-family: var(--font-mono);
+    font-size: var(--t-2xs);
+    color: var(--ink-2);
+  }
+  .note__desc {
+    margin-top: var(--space-2);
+    color: var(--ink-2);
+  }
+</style>

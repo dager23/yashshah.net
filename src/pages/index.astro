@@ -1,17 +1,438 @@
 ---
-// Placeholder home page — replaced in Phase 3.
+import { getCollection } from 'astro:content';
+import Base from '../layouts/Base.astro';
+import Row from '../components/Row.astro';
+import ProjectEntry from '../components/ProjectEntry.astro';
+import { site, profileLinks } from '../data/site';
+import { experience, type Role } from '../data/experience';
+import { publications } from '../data/publications';
+import { achievements } from '../data/achievements';
+import { education } from '../data/education';
+import { toolkit } from '../data/toolkit';
+
+const projects = (await getCollection('projects')).sort(
+  (a, b) => a.data.order - b.data.order
+);
+const featured = projects.filter((p) => p.data.featured);
+
+const posts = (await getCollection('writing'))
+  .filter((p) => !p.data.draft)
+  .sort((a, b) => b.data.pubDate.getTime() - a.data.pubDate.getTime());
+
+const [city, ...regionParts] = site.location.split(',');
+const region = regionParts.join(',').trim();
+
+function dateRange(r: Role): string {
+  if (r.current) return r.start ? `${r.start} – current` : 'current';
+  if (r.start && r.end) return `${r.start} – ${r.end}`;
+  return r.start ?? '';
+}
+
+const fmtYear = (d: Date) => d.getFullYear();
+const fmtDate = (d: Date) =>
+  d.toLocaleDateString('en-GB', { year: 'numeric', month: 'short' });
 ---
 
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Yash Shah</title>
-  </head>
-  <body>
-    <main>
-      <h1>Yash Shah</h1>
-      <p>Site under construction.</p>
-    </main>
-  </body>
-</html>
+<Base path="/">
+  <div class="sheet">
+    <section class="row hero" aria-labelledby="hero-name">
+      <div class="row__label hero__place">
+        <span>{city}</span>
+        <span>{region}</span>
+      </div>
+      <div class="row__body">
+        <h1 class="hero__name" id="hero-name">
+          {site.name}
+        </h1>
+        <p class="hero__lede">{site.intro[0]}</p>
+        {site.intro.slice(1).map((line) => (
+          <p class="hero__sub prose">{line}</p>
+        ))}
+        <ul class="hero__links">
+          {profileLinks.map((l) => (
+            <li>
+              <a class="ext" href={l.href} rel={l.external ? 'noopener' : undefined}>
+                {l.label}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
+
+    <Row label="Selected work" id="work">
+      {featured.map((p) => (
+        <ProjectEntry
+          href={`/projects/${p.id}`}
+          title={p.data.title}
+          year={fmtYear(p.data.date)}
+          summary={p.data.summary}
+          stack={p.data.stack}
+        />
+      ))}
+      <p class="more">
+        <a href="/projects">All projects</a>
+      </p>
+    </Row>
+
+    <Row label="Experience" id="experience">
+      <ol class="roles">
+        {experience.map((r) => (
+          <li class:list={['role', { 'role--current': r.current }]}>
+            <div class="role__head">
+              <span class="role__company">{r.company}</span>
+              <span class="role__title">{r.title}</span>
+            </div>
+            <p class="role__meta">
+              {dateRange(r)}
+              {dateRange(r) && ' · '}
+              {r.location}
+            </p>
+            {r.bullets.length > 0 && (
+              <ul class="role__bullets prose">
+                {r.bullets.map((b) => (
+                  <li>{b}</li>
+                ))}
+              </ul>
+            )}
+          </li>
+        ))}
+      </ol>
+    </Row>
+
+    <Row label="Publications & patents" id="publications">
+      <ul class="pubs">
+        {publications.map((p) => (
+          <li class="pub">
+            <p class="pub__title prose">{p.title}</p>
+            {p.authors && <p class="pub__authors">{p.authors}</p>}
+            <p class="pub__meta">
+              {p.venue}, {p.year}
+              {p.href && (
+                <>
+                  {' · '}
+                  <a class="ext" href={p.href} rel="noopener">
+                    doi
+                  </a>
+                </>
+              )}
+            </p>
+            {!p.href && p.ref && <p class="pub__ref">{p.ref}</p>}
+          </li>
+        ))}
+      </ul>
+    </Row>
+
+    <Row label="Achievements" id="achievements">
+      <ul class="awards">
+        {achievements.map((a) => (
+          <li class="award">
+            <span class="award__year">{a.year ?? ''}</span>
+            <span class="award__body">
+              <span class="award__title">{a.title}</span>
+              {a.detail && <span class="award__detail">{a.detail}</span>}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </Row>
+
+    {posts.length > 0 && (
+      <Row label="Writing" id="writing">
+        <ul class="notes">
+          {posts.slice(0, 3).map((post) => (
+            <li class="note">
+              <a class="note__title" href={`/writing/${post.id}`}>
+                {post.data.title}
+              </a>
+              <span class="note__date">{fmtDate(post.data.pubDate)}</span>
+              <p class="note__desc prose">{post.data.description}</p>
+            </li>
+          ))}
+        </ul>
+      </Row>
+    )}
+
+    <Row label="Education" id="education">
+      {education.map((e) => (
+        <div class="edu">
+          <p class="edu__school">{e.school}</p>
+          <p class="edu__degree prose">{e.degree}</p>
+          <p class="edu__meta">
+            {e.start}–{e.end} · {e.location}
+            {e.note && ` · ${e.note}`}
+          </p>
+        </div>
+      ))}
+    </Row>
+
+    <Row label="Toolkit" id="toolkit">
+      <dl class="kit">
+        {toolkit.map((g) => (
+          <div class="kit__group">
+            <dt>{g.label}</dt>
+            <dd>{g.items.join(' · ')}</dd>
+          </div>
+        ))}
+      </dl>
+    </Row>
+  </div>
+</Base>
+
+<style>
+  /* ---------- hero ---------- */
+  .hero__place {
+    display: flex;
+    flex-direction: column;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .hero__name {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    font-weight: 400;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-2);
+  }
+  .hero__lede {
+    margin-top: var(--space-4);
+    font-size: var(--t-display);
+    line-height: var(--leading-tight);
+    letter-spacing: -0.015em;
+    max-width: 16ch;
+  }
+  .hero__sub {
+    margin-top: var(--space-4);
+    font-size: var(--t-md);
+    line-height: var(--leading-snug);
+    color: var(--ink);
+  }
+  .hero__links {
+    margin-top: var(--space-5);
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-5);
+    font-size: var(--t-sm);
+  }
+
+  /* ---------- experience ---------- */
+  .roles {
+    list-style: none;
+  }
+  .role {
+    position: relative;
+    padding-block: var(--space-5);
+  }
+  .role:first-child {
+    padding-top: 0;
+  }
+  .role + .role {
+    border-top: var(--rule-w) solid var(--rule);
+  }
+  .role::before {
+    content: '';
+    position: absolute;
+    left: calc(-1 * var(--body-pad) - 3.5px);
+    top: 0.55rem;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--rule-strong);
+  }
+  .role:first-child::before {
+    top: 0.3rem;
+  }
+  .role--current::before {
+    background: var(--signal);
+  }
+  .role__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-2) var(--space-3);
+  }
+  .role__company {
+    font-family: var(--font-serif);
+    font-size: var(--t-md);
+  }
+  .role__title {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    color: var(--ink-2);
+  }
+  .role__meta {
+    margin-top: var(--space-1);
+    font-family: var(--font-mono);
+    font-size: var(--t-2xs);
+    color: var(--ink-2);
+  }
+  .role__bullets {
+    margin-top: var(--space-3);
+    padding-left: var(--space-4);
+    display: grid;
+    gap: var(--space-2);
+  }
+  .role__bullets li {
+    padding-left: var(--space-2);
+  }
+  .role__bullets li::marker {
+    content: '\2013  ';
+    color: var(--rule-strong);
+  }
+
+  @media (max-width: 56.99rem) {
+    .role::before {
+      display: none;
+    }
+  }
+
+  /* ---------- publications ---------- */
+  .pubs,
+  .awards,
+  .notes {
+    list-style: none;
+  }
+  .pub {
+    padding-block: var(--space-4);
+  }
+  .pub:first-child {
+    padding-top: 0;
+  }
+  .pub + .pub {
+    border-top: var(--rule-w) solid var(--rule);
+  }
+  .pub__title {
+    font-size: var(--t-md);
+    line-height: var(--leading-snug);
+  }
+  .pub__authors {
+    margin-top: var(--space-1);
+    font-family: var(--font-mono);
+    font-size: var(--t-2xs);
+    color: var(--ink-2);
+  }
+  .pub__meta {
+    margin-top: var(--space-2);
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    color: var(--ink-2);
+  }
+  .pub__ref {
+    margin-top: var(--space-1);
+    font-family: var(--font-mono);
+    font-size: var(--t-2xs);
+    color: var(--ink-2);
+  }
+
+  /* ---------- achievements ---------- */
+  .award {
+    display: grid;
+    grid-template-columns: 4.5rem 1fr;
+    gap: var(--space-3);
+    padding-block: var(--space-3);
+  }
+  .award:first-child {
+    padding-top: 0;
+  }
+  .award + .award {
+    border-top: var(--rule-w) solid var(--rule);
+  }
+  .award__year {
+    font-family: var(--font-mono);
+    font-size: var(--t-2xs);
+    color: var(--ink-2);
+    padding-top: 0.35em;
+  }
+  .award__body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+  }
+  .award__title {
+    font-size: var(--t-sm);
+  }
+  .award__detail {
+    font-family: var(--font-mono);
+    font-size: var(--t-2xs);
+    color: var(--ink-2);
+  }
+
+  /* ---------- writing ---------- */
+  .note {
+    padding-block: var(--space-4);
+  }
+  .note:first-child {
+    padding-top: 0;
+  }
+  .note + .note {
+    border-top: var(--rule-w) solid var(--rule);
+  }
+  .note__title {
+    font-family: var(--font-serif);
+    font-size: var(--t-md);
+    text-decoration: none;
+  }
+  .note__title:hover {
+    text-decoration: underline;
+    text-decoration-color: var(--signal);
+  }
+  .note__date {
+    margin-left: var(--space-3);
+    font-family: var(--font-mono);
+    font-size: var(--t-2xs);
+    color: var(--ink-2);
+  }
+  .note__desc {
+    margin-top: var(--space-2);
+    color: var(--ink-2);
+  }
+
+  /* ---------- education ---------- */
+  .edu__school {
+    font-family: var(--font-serif);
+    font-size: var(--t-md);
+  }
+  .edu__degree {
+    margin-top: var(--space-1);
+  }
+  .edu__meta {
+    margin-top: var(--space-2);
+    font-family: var(--font-mono);
+    font-size: var(--t-2xs);
+    color: var(--ink-2);
+  }
+
+  /* ---------- toolkit ---------- */
+  .kit {
+    display: grid;
+    gap: var(--space-4);
+  }
+  .kit__group {
+    display: grid;
+    grid-template-columns: 7rem 1fr;
+    gap: var(--space-3);
+  }
+  .kit dt {
+    font-family: var(--font-mono);
+    font-size: var(--t-2xs);
+    color: var(--ink-2);
+    padding-top: 0.15em;
+  }
+  .kit dd {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    line-height: var(--leading-snug);
+  }
+
+  @media (max-width: 40rem) {
+    .kit__group {
+      grid-template-columns: 1fr;
+      gap: var(--space-1);
+    }
+    .award {
+      grid-template-columns: 3.5rem 1fr;
+    }
+  }
+</style>

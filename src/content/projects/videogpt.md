@@ -1,7 +1,7 @@
 ---
 title: VideoGPT
 summary: Turns a long video into a short summary with follow-up Q&A.
-role: Design and implementation.
+role: Design and implementation
 stack:
   - speech-to-text
   - LLMs

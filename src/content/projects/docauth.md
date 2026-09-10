@@ -1,7 +1,7 @@
 ---
 title: DocAuth
 summary: Detects and localises document forgeries at 97% accuracy.
-role: Design and implementation.
+role: Design and implementation
 stack:
   - metadata analysis
   - Fourier analysis

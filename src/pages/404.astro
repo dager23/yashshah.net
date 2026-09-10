@@ -1,0 +1,37 @@
+---
+import Base from '../layouts/Base.astro';
+---
+
+<Base path="/404" title="Page not found" description="That page doesn't exist.">
+  <div class="sheet">
+    <section class="row" aria-labelledby="nf">
+      <p class="row__label">404</p>
+      <div class="row__body">
+        <h1 class="nf" id="nf">
+          Nothing filed here.
+        </h1>
+        <p class="nf__sub prose">
+          The page you asked for doesn't exist — it may have moved, or never did.
+        </p>
+        <p class="more">
+          <a href="/">Back to the start</a>
+        </p>
+      </div>
+    </section>
+  </div>
+</Base>
+
+<style>
+  .nf {
+    font-size: var(--t-xl);
+    line-height: var(--leading-tight);
+  }
+  .nf__sub {
+    margin-top: var(--space-4);
+    color: var(--ink-2);
+    font-size: var(--t-md);
+  }
+  .more {
+    margin-top: var(--space-6);
+  }
+</style>

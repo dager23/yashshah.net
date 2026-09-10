@@ -1,0 +1,53 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import ProjectEntry from '../../components/ProjectEntry.astro';
+
+const projects = (await getCollection('projects')).sort(
+  (a, b) => a.data.order - b.data.order
+);
+const fmtYear = (d: Date) => d.getFullYear();
+---
+
+<Base
+  path="/projects"
+  title="Projects"
+  description="Case studies — computer vision, document forensics, and NLP systems by Yash Shah."
+>
+  <div class="sheet">
+    <section class="row" aria-labelledby="p-label">
+      <h1 class="row__label" id="p-label">
+        Projects
+      </h1>
+      <div class="row__body">
+        <p class="lead prose">
+          Case studies. Each one follows the same shape: the problem, what I built, the
+          decision that mattered, and the result.
+        </p>
+        <div class="list">
+          {projects.map((p) => (
+            <ProjectEntry
+              href={`/projects/${p.id}`}
+              title={p.data.title}
+              year={fmtYear(p.data.date)}
+              summary={p.data.summary}
+              stack={p.data.stack}
+              role={p.data.role}
+            />
+          ))}
+        </div>
+      </div>
+    </section>
+  </div>
+</Base>
+
+<style>
+  .lead {
+    color: var(--ink-2);
+    font-size: var(--t-md);
+    line-height: var(--leading-snug);
+  }
+  .list {
+    margin-top: var(--space-6);
+  }
+</style>

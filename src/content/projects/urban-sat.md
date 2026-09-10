@@ -1,7 +1,7 @@
 ---
 title: Urban-Sat
 summary: Segments roads and buildings from satellite imagery for urban planning.
-role: Design and implementation.
+role: Design and implementation
 stack:
   - U-Net
   - semantic segmentation

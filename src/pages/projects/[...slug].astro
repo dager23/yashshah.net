@@ -1,0 +1,157 @@
+---
+import { getCollection, render } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+
+export async function getStaticPaths() {
+  const projects = await getCollection('projects');
+  return projects.map((entry) => ({
+    params: { slug: entry.id },
+    props: { entry },
+  }));
+}
+
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+const { title, summary, role, stack, repo, demo, date } = entry.data;
+const year = date.getFullYear();
+---
+
+<Base path={`/projects/${entry.id}`} title={title} description={summary}>
+  <div class="sheet">
+    <article class="row" aria-labelledby="case-title">
+      <div class="row__label">
+        <a class="back" href="/projects">
+          Projects
+        </a>
+      </div>
+      <div class="row__body">
+        <header class="case__head">
+          <h1 class="case__title" id="case-title">
+            {title}
+          </h1>
+          <p class="case__meta">
+            {role} · {year}
+          </p>
+          <ul class="case__stack" aria-label="Built with">
+            {stack.map((s) => (
+              <li>{s}</li>
+            ))}
+          </ul>
+          {(repo || demo) && (
+            <p class="case__links">
+              {repo && (
+                <a class="ext" href={repo} rel="noopener">
+                  repo
+                </a>
+              )}
+              {demo && (
+                <a class="ext" href={demo} rel="noopener">
+                  demo
+                </a>
+              )}
+            </p>
+          )}
+        </header>
+
+        <div class="case__body prose">
+          <Content />
+        </div>
+
+        <p class="more">
+          <a href="/projects">All projects</a>
+        </p>
+      </div>
+    </article>
+  </div>
+</Base>
+
+<style>
+  .back {
+    font-family: var(--font-mono);
+    font-size: var(--t-2xs);
+    color: var(--ink-2);
+    text-decoration: none;
+  }
+  .back::before {
+    content: '\2190  ';
+  }
+  .back:hover {
+    color: var(--ink);
+  }
+
+  .case__title {
+    font-size: var(--t-xl);
+    line-height: var(--leading-tight);
+    letter-spacing: -0.01em;
+  }
+  .case__meta {
+    margin-top: var(--space-2);
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    color: var(--ink-2);
+  }
+  .case__stack {
+    margin-top: var(--space-3);
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1) var(--space-3);
+    font-family: var(--font-mono);
+    font-size: var(--t-2xs);
+    color: var(--pine);
+  }
+  .case__stack li::before {
+    content: '· ';
+    color: var(--rule-strong);
+  }
+  .case__stack li:first-child::before {
+    content: '';
+  }
+  .case__links {
+    margin-top: var(--space-4);
+    display: flex;
+    gap: var(--space-5);
+    font-size: var(--t-sm);
+  }
+
+  .case__body {
+    margin-top: var(--space-7);
+    border-top: var(--rule-w) solid var(--rule);
+    padding-top: var(--space-6);
+  }
+
+  .more {
+    margin-top: var(--space-8);
+  }
+</style>
+
+<style is:global>
+  .case__body > * + * {
+    margin-top: var(--space-4);
+  }
+  .case__body h2 {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    color: var(--ink-2);
+    margin-top: var(--space-7);
+  }
+  .case__body h2:first-child {
+    margin-top: 0;
+  }
+  .case__body p {
+    font-size: var(--t-md);
+    line-height: var(--leading-normal);
+  }
+  .case__body a {
+    color: var(--signal-ink);
+    text-decoration-color: currentColor;
+  }
+  .case__body em {
+    font-style: italic;
+  }
+  .case__body strong {
+    font-weight: 600;
+  }
+</style>

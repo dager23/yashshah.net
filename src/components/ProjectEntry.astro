@@ -1,0 +1,91 @@
+---
+interface Props {
+  href: string;
+  title: string;
+  year: string | number;
+  summary: string;
+  stack: string[];
+  role?: string;
+}
+const { href, title, year, summary, stack, role } = Astro.props;
+---
+
+<article class="entry">
+  <a class="entry__head" href={href}>
+    <span class="entry__title">{title}</span>
+    <span class="entry__year">{year}</span>
+  </a>
+  <p class="entry__summary">{summary}</p>
+  {role && <p class="entry__role">{role}</p>}
+  {stack.length > 0 && (
+    <ul class="entry__stack" aria-label="Built with">
+      {stack.map((s) => (
+        <li>{s}</li>
+      ))}
+    </ul>
+  )}
+</article>
+
+<style>
+  .entry {
+    padding-block: var(--space-5);
+  }
+  .entry:first-child {
+    padding-top: 0;
+  }
+  .entry + .entry {
+    border-top: var(--rule-w) solid var(--rule);
+  }
+
+  .entry__head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-4);
+    text-decoration: none;
+  }
+  .entry__title {
+    font-family: var(--font-serif);
+    font-size: var(--t-lg);
+    line-height: var(--leading-tight);
+  }
+  .entry__head:hover .entry__title {
+    text-decoration: underline;
+    text-decoration-color: var(--signal);
+    text-underline-offset: 0.18em;
+  }
+  .entry__year {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    color: var(--ink-2);
+    flex: none;
+  }
+  .entry__summary {
+    margin-top: var(--space-2);
+    color: var(--ink-2);
+    max-width: var(--measure);
+  }
+  .entry__role {
+    margin-top: var(--space-1);
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    color: var(--ink-2);
+  }
+  .entry__stack {
+    margin-top: var(--space-3);
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1) var(--space-3);
+    font-family: var(--font-mono);
+    font-size: var(--t-2xs);
+    color: var(--pine);
+  }
+  .entry__stack li::before {
+    content: '· ';
+    color: var(--rule-strong);
+  }
+  .entry__stack li:first-child::before {
+    content: '';
+  }
+</style>

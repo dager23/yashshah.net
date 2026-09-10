@@ -1,0 +1,23 @@
+---
+interface Props {
+  label: string;
+  id?: string;
+}
+const { label, id } = Astro.props;
+const labelId = id ? `${id}-label` : undefined;
+---
+
+<section class="row" id={id} aria-labelledby={labelId}>
+  <h2 class="row__label" id={labelId}>
+    {label}
+  </h2>
+  <div class="row__body">
+    <slot />
+  </div>
+</section>
+
+<style>
+  .row__label {
+    font-weight: inherit;
+  }
+</style>
