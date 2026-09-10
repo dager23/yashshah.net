@@ -116,4 +116,3 @@ No TODO: placeholders appear in production.
 Lighthouse targets are met, and it looks right on a real phone.
 The link preview looks correct when shared on LinkedIn (check with LinkedIn's Post Inspector).
 The README explains how to add a new project or post in under five minutes.
-

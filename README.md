@@ -10,14 +10,14 @@ npm install
 npm run dev        # http://localhost:4321
 ```
 
-| Script | Does |
-| --- | --- |
-| `npm run dev` | Local dev server |
-| `npm run build` | Production build to `dist/`, then the TODO guard |
-| `npm run preview` | Serve the built `dist/` locally |
-| `npm run check` | `astro check` — types and templates |
-| `npm run format` | Prettier write |
-| `npm run gen:images` | Regenerate `public/og.png` and the favicons |
+| Script               | Does                                             |
+| -------------------- | ------------------------------------------------ |
+| `npm run dev`        | Local dev server                                 |
+| `npm run build`      | Production build to `dist/`, then the TODO guard |
+| `npm run preview`    | Serve the built `dist/` locally                  |
+| `npm run check`      | `astro check` — types and templates              |
+| `npm run format`     | Prettier write                                   |
+| `npm run gen:images` | Regenerate `public/og.png` and the favicons      |
 
 ## Add a project (case study)
 
@@ -30,11 +30,11 @@ npm run dev        # http://localhost:4321
    summary: One line, shown in lists.
    role: What you did.
    stack: [python, pytorch]
-   repo: https://github.com/...   # optional
-   demo: https://...              # optional
+   repo: https://github.com/... # optional
+   demo: https://... # optional
    date: 2024-05-01
-   featured: true                 # show on the home page
-   order: 1                       # lower sorts first
+   featured: true # show on the home page
+   order: 1 # lower sorts first
    ---
    ```
 
@@ -42,8 +42,11 @@ npm run dev        # http://localhost:4321
 
    ```markdown
    ## Problem
+
    ## What I built
+
    ## Key decision or trade-off
+
    ## Result
    ```
 
@@ -60,14 +63,14 @@ That's it — the list page, the home page, and `/projects/<slug>` pick it up on
 
 Plain TypeScript in `src/data/`:
 
-| File | Holds |
-| --- | --- |
-| `site.ts` | Name, tagline, location, links (LinkedIn, résumé, email, GitHub) |
-| `experience.ts` | Roles — company, title, dates, bullets |
-| `publications.ts` | Papers and patents |
-| `achievements.ts` | Honours and awards |
-| `education.ts` | Degree |
-| `toolkit.ts` | Languages / tools, grouped |
+| File              | Holds                                                            |
+| ----------------- | ---------------------------------------------------------------- |
+| `site.ts`         | Name, tagline, location, links (LinkedIn, résumé, email, GitHub) |
+| `experience.ts`   | Roles — company, title, dates, bullets                           |
+| `publications.ts` | Papers and patents                                               |
+| `achievements.ts` | Honours and awards                                               |
+| `education.ts`    | Degree                                                           |
+| `toolkit.ts`      | Languages / tools, grouped                                       |
 
 Each link in `site.ts` has an `enabled` flag — set `email.enabled` to `true` once
 `hi@yashshah.net` forwarding is live.
