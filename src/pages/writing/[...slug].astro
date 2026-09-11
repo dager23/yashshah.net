@@ -1,124 +1,28 @@
 ---
 import { getCollection, render } from 'astro:content';
-import Base from '../../layouts/Base.astro';
+import Strato from '../../layouts/Strato.astro';
+import arrowLeft from 'lucide-static/icons/arrow-left.svg?raw';
 
 export async function getStaticPaths() {
   const posts = (await getCollection('writing')).filter((p) => !p.data.draft);
-  return posts.map((entry) => ({
-    params: { slug: entry.id },
-    props: { entry },
-  }));
+  return posts.map((entry) => ({ params: { slug: entry.id }, props: { entry } }));
 }
 
 const { entry } = Astro.props;
 const { Content } = await render(entry);
 const { title, description, pubDate } = entry.data;
-const iso = pubDate.toISOString();
-const human = pubDate.toLocaleDateString('en-GB', {
-  year: 'numeric',
-  month: 'long',
-  day: 'numeric',
-});
 ---
 
-<Base path={`/writing/${entry.id}`} title={title} description={description}>
-  <div class="sheet">
-    <article class="row" aria-labelledby="post-title">
-      <div class="row__label">
-        <a class="back" href="/writing">
-          Writing
-        </a>
-      </div>
-      <div class="row__body">
-        <header class="post__head">
-          <h1 class="post__title" id="post-title">
-            {title}
-          </h1>
-          <p class="post__date">
-            <time datetime={iso}>{human}</time>
-          </p>
-        </header>
-        <div class="post__body prose">
-          <Content />
-        </div>
-      </div>
-    </article>
-  </div>
-</Base>
-
-<style>
-  .back {
-    font-family: var(--font-mono);
-    font-size: var(--t-2xs);
-    color: var(--ink-2);
-    text-decoration: none;
-  }
-  .back::before {
-    content: '\2190  ';
-  }
-  .back:hover {
-    color: var(--ink);
-  }
-  .post__title {
-    font-size: var(--t-xl);
-    line-height: var(--leading-tight);
-    letter-spacing: -0.01em;
-  }
-  .post__date {
-    margin-top: var(--space-2);
-    font-family: var(--font-mono);
-    font-size: var(--t-xs);
-    color: var(--ink-2);
-  }
-  .post__body {
-    margin-top: var(--space-7);
-    border-top: var(--rule-w) solid var(--rule);
-    padding-top: var(--space-6);
-  }
-</style>
-
-<style is:global>
-  .post__body > * + * {
-    margin-top: var(--space-4);
-  }
-  .post__body h2 {
-    font-size: var(--t-lg);
-    margin-top: var(--space-7);
-  }
-  .post__body h3 {
-    font-size: var(--t-md);
-    margin-top: var(--space-6);
-  }
-  .post__body p,
-  .post__body li {
-    font-size: var(--t-md);
-    line-height: var(--leading-normal);
-  }
-  .post__body ul,
-  .post__body ol {
-    padding-left: var(--space-5);
-    display: grid;
-    gap: var(--space-2);
-  }
-  .post__body a {
-    color: var(--signal-ink);
-    text-decoration-color: currentColor;
-  }
-  .post__body code {
-    font-family: var(--font-mono);
-    font-size: 0.9em;
-    background: var(--paper-raise);
-    padding: 0.1em 0.35em;
-    border-radius: 2px;
-  }
-  .post__body pre {
-    background: var(--paper-raise);
-    padding: var(--space-4);
-    border-radius: 3px;
-    overflow-x: auto;
-  }
-  .post__body pre code {
-    background: none;
-    padding: 0;
-  }
-</style>
+<Strato path={`/writing/${entry.id}`} title={title} description={description} parked="NOTES">
+  <article class="leg phase-cruise case" aria-labelledby="post-title">
+    <div class="leg__col">
+      <a class="case__back mono" href="/writing"><Fragment set:html={arrowLeft} /> Writing</a>
+      <p class="eyebrow" style="margin-top: 2.5rem">
+        <time datetime={pubDate.toISOString()}>{pubDate.toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' })}</time>
+      </p>
+      <h1 class="leg__title" id="post-title" data-reveal>{title}</h1>
+      <p class="leg__lead">{description}</p>
+      <div class="case__body"><Content /></div>
+    </div>
+  </article>
+</Strato>

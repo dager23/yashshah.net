@@ -81,6 +81,7 @@
   --hair-2: rgb(var(--ink-rgb) / 0.38);
   color: var(--ink);
 }
+.phase-dawn { --ink-3: rgb(var(--ink-rgb) / 0.76); } /* the dawn horizon is the lightest sky */
 
 *,
 *::before,
@@ -136,7 +137,7 @@ a { color: inherit; }
 .sky__dawn { background: linear-gradient(180deg, var(--dawn-top), var(--dawn-bot)); }
 .sky__cruise { background: linear-gradient(180deg, var(--cruise-top), var(--cruise-bot)); opacity: 1 !important; }
 /* dusk: purple zenith, orange only at the horizon so light ink keeps ≥ 4.5:1 over the text band */
-.sky__dusk { background: linear-gradient(180deg, var(--dusk-top) 0%, var(--dusk-top) 62%, var(--dusk-bot) 100%); }
+.sky__dusk { background: linear-gradient(180deg, var(--dusk-top) 0%, var(--dusk-top) 80%, var(--dusk-bot) 100%); }
 .js .sky__dawn { opacity: 1; }
 
 #scene {

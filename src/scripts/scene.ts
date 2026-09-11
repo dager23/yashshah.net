@@ -12,6 +12,7 @@ import {
   SpriteMaterial, SRGBColorSpace, TextureLoader, Vector3, WebGLRenderer, ACESFilmicToneMapping,
 } from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { DESKTOP, MOBILE, isNarrow } from './path';
 import { getState, subscribe } from './store';
 
 const MODEL_URL: string | null = null; // e.g. '/models/concorde.glb' once processed
@@ -66,9 +67,10 @@ function ringTexture(): CanvasTexture {
   return new CanvasTexture(c);
 }
 
-export function startScene(canvas: HTMLCanvasElement): void {
-  if (!hasWebGL()) return; // the page is complete without the scene
-  const mobile = innerWidth < 768 || matchMedia('(pointer: coarse)').matches;
+/** Returns false when WebGL is unavailable so the caller can use the 2D fallback. */
+export function startScene(canvas: HTMLCanvasElement): boolean {
+  if (!hasWebGL()) return false;
+  const mobile = isNarrow();
   const reduced = getState().reduced;
 
   const renderer = new WebGLRenderer({ canvas, alpha: true, antialias: !mobile, powerPreference: 'high-performance' });
@@ -135,16 +137,6 @@ export function startScene(canvas: HTMLCanvasElement): void {
   }
 
   /* ── flight plan curve (screen-normalised control points) ── */
-  // takeoff and touchdown stay left of the readout panel (bottom-right)
-  const DESKTOP: [number, number][] = [
-    [0.05, -0.86], [0.3, -0.84], [0.55, -0.52], [0.78, -0.2], [0.74, 0.22], [0.56, 0.44],
-    [0.34, 0.44], [0.28, 0.18], [0.4, -0.2], [0.44, -0.6], [0.32, -0.86],
-  ];
-  // narrow screens: take off from the runway, climb up the side, then fly down it through cruise to land
-  const MOBILE: [number, number][] = [
-    [0.55, -0.86], [0.74, -0.7], [0.8, -0.2], [0.76, 0.35], [0.66, 0.68],
-    [0.78, 0.42], [0.68, 0.05], [0.8, -0.3], [0.7, -0.62], [0.62, -0.86],
-  ];
   let curve = new CatmullRomCurve3([new Vector3(), new Vector3(0, 1, 0)]);
   const planLine = new Line(new BufferGeometry(), new LineDashedMaterial({ color: INSTR, dashSize: 0.35, gapSize: 0.3, transparent: true, opacity: 0.35 }));
   const flownLine = new Line(new BufferGeometry(), new LineBasicMaterial({ color: INSTR, transparent: true, opacity: 0.55 }));
@@ -220,6 +212,7 @@ export function startScene(canvas: HTMLCanvasElement): void {
     const idx = Math.round(u * 240);
     flownLine.geometry.setDrawRange(0, Math.max(2, idx + 1));
     planLine.geometry.setDrawRange(idx, Math.min(241 - idx, 70));
+    (flownLine.material as LineBasicMaterial).opacity = 0.55 * (1 - 0.75 * smooth(0.88, 1, u)); // fades on final approach
 
     // Earth limb, placed by angular radius: ~72° near the runway reads as a flat horizon,
     // ~25° at cruise shows the curvature. Its top edge sits on the runway line, rising at altitude.
@@ -262,4 +255,5 @@ export function startScene(canvas: HTMLCanvasElement): void {
   layout();
   kick();
   canvas.classList.add('is-live');
+  return true;
 }

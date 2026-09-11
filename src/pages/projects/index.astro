@@ -1,53 +1,44 @@
 ---
 import { getCollection } from 'astro:content';
-import Base from '../../layouts/Base.astro';
-import ProjectEntry from '../../components/ProjectEntry.astro';
+import Strato from '../../layouts/Strato.astro';
+import { idents } from '../../data/flightplan';
+import arrowRight from 'lucide-static/icons/arrow-right.svg?raw';
 
 const projects = (await getCollection('projects')).sort(
-  (a, b) => a.data.order - b.data.order
+  (a, b) => a.data.date.getTime() - b.data.date.getTime()
 );
-const fmtYear = (d: Date) => d.getFullYear();
 ---
 
-<Base
+<Strato
   path="/projects"
   title="Projects"
   description="Case studies — computer vision, document forensics, and NLP systems by Yash Shah."
+  parked="FPLN"
 >
-  <div class="sheet">
-    <section class="row" aria-labelledby="p-label">
-      <h1 class="row__label" id="p-label">
-        Projects
-      </h1>
-      <div class="row__body">
-        <p class="lead prose">
-          Case studies. Each one follows the same shape: the problem, what I built, the
-          decision that mattered, and the result.
-        </p>
-        <div class="list">
-          {projects.map((p) => (
-            <ProjectEntry
-              href={`/projects/${p.id}`}
-              title={p.data.title}
-              year={fmtYear(p.data.date)}
-              summary={p.data.summary}
-              stack={p.data.stack}
-              role={p.data.role}
-            />
-          ))}
-        </div>
-      </div>
-    </section>
-  </div>
-</Base>
-
-<style>
-  .lead {
-    color: var(--ink-2);
-    font-size: var(--t-md);
-    line-height: var(--leading-snug);
-  }
-  .list {
-    margin-top: var(--space-6);
-  }
-</style>
+  <section class="leg phase-cruise" aria-labelledby="p-title" style="padding-top: 9rem">
+    <div class="leg__col">
+      <p class="eyebrow">Flight plan · all waypoints</p>
+      <h1 class="leg__title" id="p-title" data-reveal>Projects</h1>
+      <p class="leg__lead">Each case study follows the same shape: the problem, what I built, the decision that mattered, and the result.</p>
+    </div>
+    <div class="case-list">
+      {
+        projects.map((p) => {
+          const ident = idents[p.id] ?? p.id.slice(0, 5).toUpperCase();
+          return (
+            <a class="panel brackets is-docked case-list__item" href={`/projects/${p.id}`}>
+              <p class="panel__hdr mono">
+                <b data-tick>{ident}</b>
+                <span>{p.data.date.getFullYear()}</span>
+                <span>{p.data.role}</span>
+              </p>
+              <h2>{p.data.title}</h2>
+              <p>{p.data.summary}</p>
+              <span class="panel__link mono">Open case study <Fragment set:html={arrowRight} /></span>
+            </a>
+          );
+        })
+      }
+    </div>
+  </section>
+</Strato>

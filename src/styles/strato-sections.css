@@ -6,7 +6,7 @@
   display: flex; align-items: center; justify-content: space-between; gap: 1rem;
   padding: 0.85rem var(--pad-x);
   color: var(--ink-light);
-  background: rgb(7 11 26 / 0.5);
+  background: rgb(7 11 26 / 0.8); /* dense enough for ≥ 4.5:1 over the pale dawn sky */
   -webkit-backdrop-filter: blur(14px) saturate(140%);
   backdrop-filter: blur(14px) saturate(140%);
   border-bottom: 1px solid rgb(232 237 245 / 0.12);
@@ -14,7 +14,7 @@
 .hdr__id { text-decoration: none; display: flex; gap: 0.75em; align-items: center; }
 .hdr__id b { color: var(--amber); font-weight: 600; }
 .hdr nav { display: flex; gap: clamp(0.75rem, 2vw, 1.75rem); }
-.hdr nav a { text-decoration: none; color: rgb(232 237 245 / 0.78); transition: color 0.25s; }
+.hdr nav a { text-decoration: none; color: rgb(232 237 245 / 0.86); transition: color 0.25s; }
 .hdr nav a:hover, .hdr nav a[aria-current] { color: var(--ink-light); }
 
 /* ─── readout (fixed instrument, doubles as progress) ─── */
@@ -22,13 +22,13 @@
   position: fixed; right: var(--pad-x); bottom: 1.5rem; z-index: 30;
   width: 15.5rem; padding: 0.9rem 1rem 0.8rem;
   color: var(--ink-light);
-  background: rgb(7 11 26 / 0.66);
+  background: rgb(7 11 26 / 0.82);
   -webkit-backdrop-filter: blur(12px);
   backdrop-filter: blur(12px);
   border: 1px solid rgb(232 237 245 / 0.12);
 }
 .readout dl { display: grid; grid-template-columns: auto 1fr; gap: 0.35rem 1rem; align-items: baseline; }
-.readout dt { color: rgb(232 237 245 / 0.66); }
+.readout dt { color: rgb(232 237 245 / 0.74); }
 .readout dd { text-align: right; color: var(--instr); }
 .readout dd.is-amber { color: var(--amber); }
 .readout__bar { position: relative; margin-top: 0.75rem; }
@@ -142,7 +142,8 @@ main { position: relative; z-index: 1; }
 .slip a { color: var(--instr); }
 
 /* ─── landing ─── */
-.land { min-height: 100svh; display: grid; align-content: center; padding-bottom: 8rem; }
+/* text stays above the orange horizon band (bottom ~18%); only the runway sits in it */
+.land { min-height: 100svh; display: grid; align-content: center; padding-bottom: max(20vh, 8rem); }
 .pass {
   position: relative; display: grid; grid-template-columns: 1fr auto; margin-top: 2.5rem;
   width: min(40rem, 100%); color: var(--ink-dark); background: var(--ink-light);
@@ -156,6 +157,35 @@ main { position: relative; z-index: 1; }
 .pass__stub { width: 5.5rem; border-left: 2px dashed rgb(11 16 32 / 0.3); background: repeating-linear-gradient(90deg, var(--ink-dark) 0 2px, transparent 2px 4px, var(--ink-dark) 4px 5px, transparent 5px 8px) 50% 50% / 60% 70% no-repeat; }
 .pass__cta { grid-column: 1 / -1; padding: 0.8rem 1.4rem; background: var(--amber); color: var(--ink-dark); border-radius: 0 0 var(--radius) var(--radius); }
 .contact { margin-top: 2.5rem; display: flex; flex-wrap: wrap; gap: 0.75rem; }
+
+/* ─── 2D fallback plane (no WebGL) ─── */
+.fallback-plane {
+  position: fixed; left: 0; top: 0; z-index: -1; width: 52px; height: 40px; margin: -20px 0 0 -26px;
+  color: var(--instr); pointer-events: none; will-change: transform;
+  filter: drop-shadow(0 0 6px rgb(127 211 255 / 0.6));
+}
+.fallback-plane svg { width: 100%; height: 100%; }
+
+/* ─── case studies ─── */
+.case { padding-top: 7.5rem; }
+.case__back { display: inline-flex; align-items: center; gap: 0.5em; color: var(--ink-2); text-decoration: none; }
+.case__back:hover { color: var(--instr); }
+.case__back svg { width: 1.1em; height: 1.1em; }
+.case__meta { margin-top: 2.5rem; }
+.case__meta .tags { margin-top: 0.9rem; }
+.case__links { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1.25rem; }
+.case__body { margin-top: 3.5rem; max-width: 68ch; }
+.case__body > * + * { margin-top: 1rem; }
+.case__body h2 {
+  margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--hair);
+  font: 600 var(--t-mono) / 1.4 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--instr);
+}
+.case__body p { color: var(--ink-2); font-size: var(--t-body); }
+.case__body em { font-style: italic; }
+.case-list { margin-top: 3rem; display: grid; gap: 1.25rem; width: min(52rem, 100%); }
+.case-list__item { text-decoration: none; display: block; width: 100%; }
+.case-list__item h2 { margin-top: 1.1rem; font-size: var(--t-h3); font-weight: 600; font-stretch: 125%; line-height: 1.05; }
+.case-list__item p { margin-top: 0.6rem; color: rgb(232 237 245 / 0.82); }
 
 .foot { padding: 2.5rem var(--pad-x) 3rem; color: rgb(232 237 245 / 0.7); border-top: 1px solid rgb(232 237 245 / 0.12); background: rgb(7 11 26 / 0.65); display: flex; flex-wrap: wrap; gap: 0.75rem 2rem; justify-content: space-between; }
 .foot a { color: inherit; }

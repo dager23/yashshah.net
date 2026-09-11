@@ -234,7 +234,11 @@ function requestScene(): void {
   const canvas = document.getElementById('scene') as HTMLCanvasElement | null;
   if (!canvas) return;
   sceneRequested = true;
-  const go = () => import('./scene').then((m) => m.startScene(canvas)).catch((e) => console.warn('scene unavailable', e));
+  const fallback = () => import('./fallback2d').then((f) => f.startFallback());
+  const go = () =>
+    import('./scene')
+      .then((m) => (m.startScene(canvas) ? undefined : fallback()))
+      .catch((e) => { console.warn('scene unavailable, using 2D route', e); return fallback(); });
   const idle: (cb: () => void) => void =
     'requestIdleCallback' in window ? (cb) => window.requestIdleCallback(cb, { timeout: 1500 }) : (cb) => setTimeout(cb, 400);
   if (document.readyState === 'complete') idle(go);
@@ -245,7 +249,8 @@ function initPage(): void {
   ctx?.revert();
   activeLeg = 'gate';
   activeWpt = null;
-  parkedIdent = document.body.dataset.parked ?? null;
+  // pages without a flight plan (no gate) always park in cruise — never on the dawn sky
+  parkedIdent = document.body.dataset.parked ?? (document.getElementById('gate') ? null : 'CRUISE');
   els = {
     mach: document.querySelector('[data-r="mach"]'),
     alt: document.querySelector('[data-r="alt"]'),
@@ -269,6 +274,32 @@ function initPage(): void {
   update(ScrollTrigger.maxScroll(window) ? scrollY / ScrollTrigger.maxScroll(window) : 0);
   requestScene();
 }
+
+/* ─── hover: idents tick over (split-flap style), then settle ───────── */
+const TICK = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+function tickOver(el: HTMLElement): void {
+  if (reduced || el.dataset.ticking) return;
+  const final = el.dataset.final ?? el.textContent ?? '';
+  el.dataset.final = final;
+  el.dataset.ticking = '1';
+  let step = 0;
+  const id = setInterval(() => {
+    step++;
+    el.textContent = [...final].map((ch, i) => (i < (step / 8) * final.length ? ch : TICK[(i * 7 + step * 13) % TICK.length])).join('');
+    if (step >= 8) {
+      clearInterval(id);
+      el.textContent = final;
+      delete el.dataset.ticking;
+    }
+  }, 34);
+}
+const onHover = (e: Event) => {
+  const host = (e.target as Element | null)?.closest?.('.panel, .case-list__item');
+  const tick = host?.querySelector<HTMLElement>('[data-tick]');
+  if (tick) tickOver(tick);
+};
+document.addEventListener('pointerover', onHover);
+document.addEventListener('focusin', onHover);
 
 initLenis();
 document.addEventListener('astro:page-load', initPage);

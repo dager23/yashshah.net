@@ -139,7 +139,7 @@ const edu = education[0];
           <article class="wpt" data-wpt={ident} id={`wpt-${p.id}`} aria-labelledby={`t-${p.id}`}>
             <div class="panel brackets">
               <p class="panel__hdr mono">
-                <b>{ident}</b>
+                <b data-tick>{ident}</b>
                 <span>{p.data.date.getFullYear()}</span>
                 <span>{p.data.stack.slice(0, 2).join(' · ')}</span>
               </p>
