@@ -118,7 +118,7 @@ main { position: relative; z-index: 1; }
 }
 .deck__pitch { font-size: calc(var(--u) * var(--pitch-fs)); line-height: 1.4; color: var(--ink-light); text-wrap: pretty; }
 @media (max-aspect-ratio: 7/10) {
-  .deck__stage { --W: 390; --H: 844; --fpm-y: 31.04%; --name-y: 290; --name-fs: 62; --scr-x: 30; --scr-y: 530; --scr-w: 330; --scr-h: 184; --scr-pad: 22; --pitch-fs: 19; }
+  .deck__stage { --W: 390; --H: 844; --fpm-y: 24.88%; --name-y: 290; --name-fs: 62; --scr-x: 30; --scr-y: 530; --scr-w: 330; --scr-h: 184; --scr-pad: 22; --pitch-fs: 19; }
   .deck__art--wide, .deck__sym--wide { display: none; }
   .deck__art--tall, .deck__sym--tall { display: block; }
   .deck__name span { display: block; }
@@ -139,11 +139,7 @@ main { position: relative; z-index: 1; }
 .facts { margin-top: 2.5rem; display: grid; gap: 0; border-top: 1px solid var(--hair); }
 .facts div { display: grid; grid-template-columns: 9rem 1fr; gap: 1rem; padding: 0.9rem 0; border-bottom: 1px solid var(--hair); }
 .facts dt { color: var(--ink-3); }
-.gauges { margin-top: 3rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); gap: 1.25rem; }
-.gauge { padding: 1.1rem 1.2rem 1.2rem; background: var(--glass); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
-.gauge h3 { color: var(--instr); }
-.gauge ul { list-style: none; margin-top: 0.9rem; display: grid; gap: 0.45rem; }
-.gauge li { display: flex; justify-content: space-between; gap: 1rem; font-size: var(--t-small); border-bottom: 1px dashed var(--hair); padding-bottom: 0.4rem; }
+/* toolkit: the overhead panel lives in strato-live.css (.overhead / .panelset) */
 
 /* ─── cruise: waypoints ─── */
 .wpt { min-height: 92vh; display: grid; align-content: center; }
@@ -213,7 +209,7 @@ main { position: relative; z-index: 1; }
 
 /* ─── 2D fallback plane (no WebGL) ─── */
 .fallback-plane {
-  position: fixed; left: 0; top: 0; z-index: -1; width: 52px; height: 40px; margin: -20px 0 0 -26px;
+  position: fixed; left: 0; top: 0; z-index: -1; width: 56px; height: 56px; margin: -28px 0 0 -28px;
   color: var(--instr); pointer-events: none; will-change: transform;
   filter: drop-shadow(0 0 6px rgb(127 211 255 / 0.6));
 }

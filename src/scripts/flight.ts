@@ -198,11 +198,19 @@ function pushThrough(): void {
     .to(q('.deck__stage'), { autoAlpha: 0, duration: 0.3 }, 0.35);
 }
 
-/* ─── gate: the HUD boots — readouts settle character by character, the plan draws itself ─── */
+/* ─── gate: the HUD boots — readouts settle character by character, the plan draws itself;
+   once per session the whole panel powers up in sequence (strato-live.css, .is-boot) ─── */
 function bootHud(): void {
   const spans = document.querySelectorAll<HTMLElement>('[data-boot]');
   const plans = document.querySelectorAll<Element>('.deck__route');
   if (reduced || !spans.length) { plans.forEach((p) => p.classList.add('is-drawn')); return; }
+  try {
+    if (!sessionStorage.getItem('booted')) {
+      sessionStorage.setItem('booted', '1');
+      root.classList.add('is-boot');
+      setTimeout(() => root.classList.remove('is-boot'), 2600);
+    }
+  } catch { /* storage blocked: skip the sequence rather than replay it every visit */ }
   const CH = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
   const STEPS = 14;
   spans.forEach((el, i) => {
@@ -304,6 +312,34 @@ function passTilt(): void {
   pass.addEventListener('pointerleave', () => {
     pass.style.removeProperty('--rx');
     pass.style.removeProperty('--ry');
+  });
+}
+
+/* ─── fade-up reveals: log entries, toolkit panels and slips arrive once (strato-live.css) ─── */
+function fadeUps(): void {
+  document.querySelectorAll<HTMLElement>('.entry, .panelset, .slip').forEach((el, i) => {
+    if (reduced) { el.classList.add('is-in'); return; }
+    ScrollTrigger.create({
+      trigger: el, start: 'top 90%', once: true,
+      onEnter: () => setTimeout(() => el.classList.add('is-in'), (i % 4) * 70),
+    });
+  });
+}
+
+/* ─── route map: the legs draw themselves as the map arrives, then fall back to the dashed plan ─── */
+function mapDraw(): void {
+  const map = document.querySelector<HTMLElement>('.routemap');
+  const arcs = map ? [...map.querySelectorAll<SVGPathElement>('.route-arc')] : [];
+  if (!map || !arcs.length || reduced) return;
+  const lens = arcs.map((a) => a.getTotalLength());
+  arcs.forEach((a, i) => { a.style.strokeDasharray = `${lens[i]}`; a.style.strokeDashoffset = `${lens[i]}`; });
+  ScrollTrigger.create({
+    trigger: map, start: 'top 82%', once: true,
+    onEnter: () =>
+      gsap.to(arcs, {
+        strokeDashoffset: 0, duration: 1.5, stagger: 0.35, ease: 'power2.inOut',
+        onComplete: () => arcs.forEach((a) => { a.style.strokeDasharray = ''; a.style.strokeDashoffset = ''; }),
+      }),
   });
 }
 
@@ -411,7 +447,9 @@ function initPage(): void {
     reveals();
     pushThrough();
     logSync();
+    mapDraw();
     stamps();
+    fadeUps();
   });
   passTilt();
   navPill();

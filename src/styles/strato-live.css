@@ -20,11 +20,22 @@
   90% { transform: translate(4%, -2%); } 100% { transform: translate(0, 0); }
 }
 
-/* ─── hero: the view is now a layer (sky drawing + stars + clouds) that pushes through together ─── */
+/* ─── hero: the view is a layer (sky drawing + stars + clouds) that pushes through together ─── */
 .deck__view { position: absolute; inset: 0; }
-.deck__stage { --hz: 330; --data-y: 118; --data-x: 60; --data-fs: 13; --enter-y: 488; --enter-fs: 14; }
+.deck__stage {
+  --hz: 330; --data-y: 118; --data-x: 60; --data-fs: 13; --enter-y: 517; --enter-fs: 14;
+  --name-y: 410; --name-fs: 96; /* desktop: the sky band is short, so the name sits well down into the ground band */
+}
 @media (max-aspect-ratio: 7/10) {
-  .deck__stage { --hz: 262; --data-y: 66; --data-x: 20; --data-fs: 9.5; --enter-y: 418; --enter-fs: 10.5; }
+  /* phone: the horizon is drawn higher (210 of 844) and the name follows it up */
+  .deck__stage { --hz: 210; --data-y: 66; --data-x: 20; --data-fs: 9.5; --enter-y: 400; --enter-fs: 10.5; --name-y: 246; --name-fs: 60; }
+}
+/* depth: the world outside is a touch soft and hazy, the panel stays sharp (desktop only — it's a full-screen filter) */
+@media (hover: hover) { .deck__view { filter: blur(0.5px); } }
+/* the sky a shade deeper at the zenith, a light haze toward the horizon */
+.deck__view::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(180deg, rgb(11 16 32 / 0.2), rgb(11 16 32 / 0.06) 42%, rgb(221 230 238 / 0.14) 100%);
 }
 /* faint stars at the zenith of the dawn sky */
 .deck__stars {
@@ -49,6 +60,37 @@
   animation: drift 110s ease-in-out infinite alternate;
 }
 @keyframes drift { from { transform: translateX(-4%); } to { transform: translateX(6%); } }
+/* instruments are never quite still: the attitude balls and standby needles drift, the HUD horizon breathes.
+   Desktop only: these live inside the dashboard SVG, and animating there repaints the whole panel each frame —
+   fine on a laptop GPU, a main-thread tax on phones. */
+@media (hover: hover) {
+  .pfd-att { transform-box: fill-box; transform-origin: center; animation: att-drift 9s ease-in-out infinite alternate; }
+  .sb-needle { transform-box: view-box; animation: needle-drift 6s ease-in-out infinite alternate; }
+  .deck__hzn { animation: hzn-pulse 4.5s ease-in-out infinite; }
+}
+@keyframes att-drift { from { transform: rotate(-1.4deg) translateY(-1px); } to { transform: rotate(1.4deg) translateY(1px); } }
+@keyframes needle-drift { from { transform: rotate(-3deg); } to { transform: rotate(3deg); } }
+@keyframes hzn-pulse { 0%, 100% { opacity: 0.55; } 50% { opacity: 1; } }
+/* the centre display is a CRT: scan lines under the text, a soft glow at the edges */
+.deck__screen::before {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background: repeating-linear-gradient(0deg, rgb(7 11 26 / 0.22) 0 1px, transparent 1px 3px);
+}
+.deck__screen::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  box-shadow: inset 0 0 calc(var(--u) * 46) rgb(127 211 255 / 0.14);
+}
+.deck__pitch { position: relative; }
+/* systems coming online: once per session, the displays and readouts power up in sequence (flight.ts adds .is-boot) */
+.is-boot .deck__frame .du, .is-boot .deck__screen, .is-boot .deck__data, .is-boot .deck__enter, .is-boot .deck__sym {
+  animation: power-on 0.55s var(--ease-out) backwards; /* backwards: nothing lingers over the scroll-driven opacity */
+}
+.is-boot .deck__frame .du { animation-delay: calc(0.2s + var(--i) * 0.16s); }
+.is-boot .deck__sym { animation-delay: 0.3s; }
+.is-boot .deck__data { animation-delay: 0.5s; }
+.is-boot .deck__screen { animation-delay: 0.85s; }
+.is-boot .deck__enter { animation-delay: 1.2s; }
+@keyframes power-on { 0% { opacity: 0; } 40% { opacity: 0.9; } 55% { opacity: 0.35; } 100% { opacity: 1; } }
 /* HUD readouts: settle character by character on load (flight.ts) */
 .deck__data {
   position: absolute; top: calc(var(--u) * var(--data-y)); display: grid; gap: 0.5em;
@@ -71,13 +113,14 @@ html:not(.js) .deck__route-line { stroke-dashoffset: 0; }
   padding: 0.55em 1.1em; font-size: calc(var(--u) * var(--enter-fs)); font-weight: 600;
   color: var(--instr); text-decoration: none; pointer-events: auto;
   text-shadow: 0 0 0.6em rgb(127 211 255 / 0.55);
-  transition: letter-spacing 0.4s var(--ease-out), color 0.3s;
+  transition: letter-spacing 0.4s var(--ease-out), color 0.3s, scale 0.15s ease;
 }
 .deck__enter b { font-weight: 500; opacity: 0.7; transition: transform 0.4s var(--ease-out); display: inline-block; }
 .deck__enter i { font-style: normal; display: inline-block; animation: nudge 2.2s ease-in-out infinite; }
 .deck__enter:hover { letter-spacing: 0.14em; color: var(--ink-light); }
 .deck__enter:hover b:first-child { transform: translateX(-0.3em); }
 .deck__enter:hover b:last-child { transform: translateX(0.3em); }
+.deck__enter:active { scale: 0.96; }
 @keyframes nudge { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(0.25em); } }
 .js .deck__lights circle { animation: rwy-blink 2.8s ease-in-out infinite; }
 .js .deck__lights circle:nth-child(3n) { animation-delay: -0.9s; }
@@ -101,12 +144,19 @@ html:not(.js) .deck__route-line { stroke-dashoffset: 0; }
 @keyframes shock-flash { 0% { opacity: 0.28; } 100% { opacity: 0; } }
 
 /* ─── liquid glass v3: bevelled lens edge, a light travelling the rim, pointer specular,
-   tint that follows the sky. --dawn / --dusk from flight.ts; --mx / --my is the pointer. ─── */
+   tint that follows the sky. --dawn / --dusk from flight.ts; --mx / --my is the pointer.
+   The glass is dense only where a pale sky sits behind it (gate, landing) — for contrast;
+   over the dark cruise sky it clears to a true see-through pane. ─── */
 @property --ra { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
-.hdr, .readout { --mx: 50%; --my: 0%; --dawn: 1; --dusk: 0; border-color: transparent; background-clip: padding-box; }
+/* --dawn / --dusk are inherited from the root (defaults in strato-base.css, live values from flight.ts) —
+   never redeclare them here or the glass stops following the sky */
+.hdr, .readout { --mx: 50%; --my: 0%; --pale: max(var(--dawn), var(--dusk)); border-color: transparent; background-clip: padding-box; }
 .hdr {
-  -webkit-backdrop-filter: blur(24px) saturate(200%) brightness(1.06);
-  backdrop-filter: blur(24px) saturate(200%) brightness(1.06);
+  background: linear-gradient(180deg,
+    rgb(27 42 78 / calc(0.34 + 0.44 * var(--pale))),
+    rgb(7 11 26 / calc(0.44 + 0.42 * var(--pale))));
+  -webkit-backdrop-filter: blur(20px) saturate(200%) brightness(1.08);
+  backdrop-filter: blur(20px) saturate(200%) brightness(1.08);
   box-shadow:
     inset 0 1px 0 rgb(255 255 255 / 0.45),
     inset 0 2px 8px rgb(255 255 255 / 0.12),
@@ -115,10 +165,15 @@ html:not(.js) .deck__route-line { stroke-dashoffset: 0; }
     0 1px 0 rgb(7 11 26 / 0.6),
     0 22px 44px -22px rgb(7 11 26 / 0.95);
 }
+.readout {
+  background: linear-gradient(180deg,
+    rgb(27 42 78 / calc(0.36 + 0.40 * var(--pale))),
+    rgb(7 11 26 / calc(0.48 + 0.38 * var(--pale))));
+}
 @media (min-width: 768px) {
   .readout {
-    -webkit-backdrop-filter: blur(22px) saturate(190%);
-    backdrop-filter: blur(22px) saturate(190%);
+    -webkit-backdrop-filter: blur(24px) saturate(200%) brightness(1.08);
+    backdrop-filter: blur(24px) saturate(200%) brightness(1.08);
     box-shadow:
       var(--bezel),
       inset 0 1px 0 rgb(255 255 255 / 0.4),
@@ -162,14 +217,25 @@ html:not(.js) .deck__route-line { stroke-dashoffset: 0; }
 .hdr__pill.is-on { opacity: 1; }
 .hdr nav a { position: relative; z-index: 1; }
 
+/* ─── interactive states: one language — lift, cyan glow, press; teal for secondary hovers and focus ─── */
+:focus-visible { outline: 2px solid var(--teal); outline-offset: 3px; box-shadow: 0 0 0 5px rgb(99 230 210 / 0.22); }
+.btn {
+  transition: border-color 0.3s, background 0.3s, color 0.3s, box-shadow 0.3s, transform var(--dur) var(--ease-out), scale 0.15s ease;
+}
+.btn:hover { border-color: var(--teal); box-shadow: 0 0 16px rgb(99 230 210 / 0.22); }
+.btn--primary:hover { border-color: var(--ink-light); box-shadow: 0 0 18px rgb(255 122 47 / 0.35); }
+.btn:active, .pass:active, .panel__link:active { scale: 0.97; }
+.pass { transition: transform 0.25s var(--ease-out), scale 0.15s ease; }
+.panel__link { transition: color 0.3s, gap 0.3s, scale 0.15s ease; }
+.panel__link:hover { gap: 0.8em; text-decoration: none; color: var(--ink-light); text-shadow: 0 0 0.6em rgb(127 211 255 / 0.6); }
+
 /* ─── section eyebrows carry an altitude readout; HUD-style controls ─── */
 .eyebrow b { color: var(--instr); font-weight: 600; text-shadow: 0 0 0.6em rgb(127 211 255 / 0.4); }
 .btn--hud {
   color: var(--instr); border-color: rgb(127 211 255 / 0.45);
   text-shadow: 0 0 0.6em rgb(127 211 255 / 0.5);
-  box-shadow: inset 0 0 0 0 rgb(127 211 255 / 0);
 }
-.btn--hud:hover { border-color: var(--instr); background: rgb(127 211 255 / 0.1); color: var(--ink-light); }
+.btn--hud:hover { border-color: var(--instr); background: rgb(127 211 255 / 0.1); color: var(--ink-light); box-shadow: 0 0 18px rgb(127 211 255 / 0.3); }
 .btn--hud b { font-weight: 500; opacity: 0.7; }
 /* the one line of voice, under the About lead */
 .aside {
@@ -181,7 +247,26 @@ html:not(.js) .deck__route-line { stroke-dashoffset: 0; }
 .land__status::before { content: ''; width: 0.5em; height: 0.5em; border-radius: 50%; background: var(--instr); box-shadow: 0 0 8px var(--instr); animation: blip 1.8s ease-in-out infinite; }
 @keyframes blip { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
 
-/* ─── cruise: a dashed leg line threads the project panels, a star marks each waypoint ─── */
+/* ─── the technical voice: labels and tags in a condensed cut of Archivo (its wdth axis) ─── */
+.tags li, .chip, .gauge h3, .facts dt, .stamp small, .entry h3 small, .pass__main .mono {
+  font-family: var(--font-wide); font-stretch: 82%; font-weight: 500; letter-spacing: 0.07em; text-transform: uppercase;
+}
+.tags li { border-radius: 999px; padding: 0.3rem 0.75rem; font-size: 0.74rem; border-color: rgb(127 211 255 / 0.3); color: rgb(232 237 245 / 0.84);
+  transition: border-color 0.3s, box-shadow 0.3s, color 0.3s, background 0.3s; }
+.tags li:hover { border-color: var(--instr); color: var(--ink-light); background: rgb(127 211 255 / 0.08); box-shadow: 0 0 12px rgb(127 211 255 / 0.3); }
+.gauge h3 { font-size: 0.8rem; letter-spacing: 0.12em; }
+
+/* ─── cruise: cards lift on hover with a cyan glow; the result bar carries the amber; the star reacts ─── */
+.panel {
+  transition: transform 0.9s var(--ease-out), opacity 0.9s var(--ease-out), translate 0.45s var(--ease-out), box-shadow 0.45s var(--ease-out);
+}
+.panel:hover { translate: 0 -4px; box-shadow: var(--bezel), var(--specular), 0 0 0 1px rgb(127 211 255 / 0.35), 0 22px 48px -20px rgb(127 211 255 / 0.5); }
+.panel__result {
+  border-left: 4px solid var(--amber);
+  background: linear-gradient(90deg, rgb(255 122 47 / 0.16), rgb(255 122 47 / 0.03));
+  box-shadow: -4px 0 16px -6px rgb(255 122 47 / 0.7);
+}
+.panel__result span { font-family: var(--font-wide); font-stretch: 82%; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; }
 .wpt__star { display: none; }
 @media (min-width: 900px) {
   .wpt { position: relative; }
@@ -194,10 +279,55 @@ html:not(.js) .deck__route-line { stroke-dashoffset: 0; }
     background: var(--ink-light);
     clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%);
     filter: drop-shadow(0 0 5px var(--instr));
-    transition: scale 0.5s var(--ease-out), background 0.3s;
+    transition: scale 0.5s var(--ease-out), background 0.3s, rotate 0.6s var(--ease-out);
   }
   .wpt:has(.panel.is-docked) .wpt__star { scale: 1.5; background: var(--amber); filter: drop-shadow(0 0 6px rgb(255 122 47 / 0.8)); }
+  .wpt:has(.panel:hover) .wpt__star { scale: 2; rotate: 45deg; background: var(--instr); filter: drop-shadow(0 0 10px var(--instr)); }
 }
+
+/* ─── toolkit as an overhead panel: sub-panels of toggle switches, all ON, each with its indicator ─── */
+.overhead { margin-top: 2.5rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: 1.25rem; }
+.panelset {
+  position: relative; padding: 0 0 0.6rem; border-radius: 6px;
+  background: linear-gradient(180deg, #16213f, var(--ink-dark));
+  box-shadow: var(--bezel), var(--specular);
+  transition: opacity 0.8s var(--ease-out), translate 0.8s var(--ease-out), box-shadow 0.45s;
+}
+.panelset:hover { box-shadow: var(--bezel), var(--specular), 0 0 0 1px rgb(127 211 255 / 0.3), 0 18px 40px -20px rgb(127 211 255 / 0.45); }
+.panelset h3 {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 1rem;
+  padding: 0.8rem 1rem 0.65rem; border-bottom: 1px solid rgb(232 237 245 / 0.1);
+  color: var(--instr); font-size: 0.8rem; letter-spacing: 0.12em;
+  text-shadow: 0 0 0.6em rgb(127 211 255 / 0.4);
+}
+.panelset__count { font-size: 0.68rem; color: rgb(232 237 245 / 0.55); letter-spacing: 0.1em; }
+.panelset ul { list-style: none; margin: 0; padding: 0.35rem 0 0; display: grid; }
+.panelset li {
+  display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 0.85rem;
+  padding: 0.42rem 1rem; font-size: var(--t-small); color: rgb(232 237 245 / 0.88);
+  border-bottom: 1px solid rgb(232 237 245 / 0.05);
+}
+.panelset li:last-child { border-bottom: 0; }
+/* the toggle: a short track with the knob thrown up — ON */
+.sw {
+  position: relative; display: block; width: 12px; height: 22px; border-radius: 3px;
+  background: #070b1a; box-shadow: inset 0 1px 0 rgb(232 237 245 / 0.08), 0 0 0 1px rgb(232 237 245 / 0.14);
+}
+.sw::before {
+  content: ''; position: absolute; left: 2px; right: 2px; top: 2px; height: 9px; border-radius: 2px;
+  background: linear-gradient(180deg, var(--ink-light), #b9c3d3);
+  transition: translate 0.25s var(--ease-out);
+}
+.led { width: 6px; height: 6px; border-radius: 50%; background: var(--instr); box-shadow: 0 0 6px var(--instr); transition: box-shadow 0.3s; }
+.panelset li:hover { color: var(--ink-light); }
+.panelset li:hover .sw::before { translate: 0 -1px; }
+.panelset li:hover .led { box-shadow: 0 0 12px var(--instr), 0 0 2px var(--ink-light); }
+
+/* ─── reveals: entries, toolkit panels and slips fade up once as they arrive (flight.ts adds .is-in) ─── */
+.js .entry, .js .panelset, .js .slip { opacity: 0; translate: 0 1.25rem; }
+.js .entry, .js .slip { transition: opacity 0.8s var(--ease-out), translate 0.8s var(--ease-out); }
+.js .entry.is-in, .js .panelset.is-in, .js .slip.is-in { opacity: 1; translate: 0 0; }
+.odo__strip { transition-duration: 0.7s; }
 
 /* ─── flight log ↔ route map ─── */
 .log { display: grid; gap: 2.5rem; align-items: start; }
@@ -206,7 +336,7 @@ html:not(.js) .deck__route-line { stroke-dashoffset: 0; }
   .log .routemap { position: sticky; top: 6.5rem; margin-top: 9.5rem; width: 100%; }
 }
 .chip {
-  display: inline-block; margin-left: 0.6em; padding: 0.15em 0.5em; border: 1px solid var(--instr); border-radius: 2px;
+  display: inline-block; margin-left: 0.6em; padding: 0.15em 0.5em; border: 1px solid var(--instr); border-radius: 999px;
   color: var(--instr); font-size: 0.92em; vertical-align: 0.1em;
   transition: background 0.3s, color 0.3s, box-shadow 0.3s;
 }
@@ -225,7 +355,8 @@ html:not(.js) .deck__route-line { stroke-dashoffset: 0; }
 @keyframes fly { 0% { offset-distance: 0%; opacity: 0; } 10% { opacity: 1; } 100% { offset-distance: 100%; opacity: 1; } }
 
 /* ─── clearances: each honour is stamped onto the page once it's in view ─── */
-.stamp { outline: 1px solid var(--instr); outline-offset: -5px; }
+.stamp { outline: 1px solid var(--instr); outline-offset: -5px; transition: box-shadow 0.4s, translate 0.4s var(--ease-out); }
+.stamp:hover { translate: 0 -3px; box-shadow: 0 0 0 1px rgb(127 211 255 / 0.3), 0 16px 36px -18px rgb(127 211 255 / 0.5); }
 .js .stamp { opacity: 0; }
 .js .stamp.is-stamped { opacity: 1; animation: stamp-in 0.6s cubic-bezier(0.2, 1.3, 0.35, 1) both; }
 @keyframes stamp-in {
@@ -252,8 +383,13 @@ html:not(.js) .deck__route-line { stroke-dashoffset: 0; }
 .foot__route b { font-weight: 600; }
 .foot__route i { display: inline-block; width: 1.4em; height: 1px; background: currentColor; opacity: 0.55; }
 
-/* phones keep the grain but not its flicker: the constant repaint costs main-thread time on slow devices */
-@media (hover: none) { .film::after { animation: none; } }
+/* phones keep the grain but not its flicker, and the rim light rests: constant repaints cost main-thread
+   time on slow devices, and a backdrop-filtered element repaints its whole blur with them */
+@media (hover: none) {
+  .film::after { animation: none; }
+  .hdr::after, .readout::after { animation: none; }
+  .readout { -webkit-backdrop-filter: blur(14px) saturate(170%); backdrop-filter: blur(14px) saturate(170%); }
+}
 @media (prefers-reduced-motion: reduce) {
   .shock { display: none; }
   .film::after { animation: none; }
@@ -262,4 +398,5 @@ html:not(.js) .deck__route-line { stroke-dashoffset: 0; }
   .pass, .pass:hover { transform: none; }
   .js .deck__route .wp { opacity: 1; transform: none; }
   .js .deck__route-line { stroke-dashoffset: 0; }
+  .js .entry, .js .gauge, .js .slip { opacity: 1; translate: 0 0; }
 }

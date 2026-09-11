@@ -5,7 +5,8 @@
 import { DESKTOP, MOBILE, isNarrow, type Pt } from './path';
 import { getState, subscribe } from './store';
 
-const MARKER = `<svg viewBox="-26 -20 52 40" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle r="7"/><path d="M-7 0H-24M7 0H24M0-7V-17"/></g></svg>`;
+// the same Concorde-style delta as the WebGL sprite (scene.ts), nose up
+const MARKER = `<svg viewBox="0 0 160 160" aria-hidden="true"><path d="M80 8 L83 28 L84.5 58 Q98 92 132 128 L130 134 L92 133 L86 146 L82.5 152 L80 154 L77.5 152 L74 146 L68 133 L30 134 L28 128 Q62 92 75.5 58 L77 28 Z" fill="rgba(127,211,255,.3)" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><g fill="rgba(232,237,245,.8)"><rect x="94" y="108" width="20" height="24"/><rect x="46" y="108" width="20" height="24"/><rect x="79" y="96" width="2" height="50"/></g></svg>`;
 
 /** uniform Catmull-Rom through the control points, re-sampled by arc length */
 function route(pts: Pt[], w: number, h: number, n = 240): Pt[] {
@@ -46,9 +47,8 @@ export function startFallback(): () => void {
     const i = Math.min(pts.length - 1, Math.max(0, Math.round(u * (pts.length - 1))));
     const [x, y] = pts[i];
     const [nx, ny] = pts[Math.min(pts.length - 1, i + 4)];
-    const heading = Math.atan2(ny - y, nx - x);
-    const bank = Math.max(-0.4, Math.min(0.4, Math.sin(heading) * 0.35));
-    el.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) rotate(${bank.toFixed(3)}rad)`;
+    const heading = Math.atan2(ny - y, nx - x); // screen space: y down, so nose-up needs +90°
+    el.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) rotate(${(heading + Math.PI / 2).toFixed(3)}rad)`;
   }
   const unsubscribe = subscribe((s) => draw(s.u));
   return () => {

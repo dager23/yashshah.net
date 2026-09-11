@@ -1,6 +1,6 @@
 /**
  * Stratosphere WebGL scene: Earth limb + atmosphere, stars, the flight plan
- * curve and the aircraft rig. Loaded lazily after the hero paints.
+ * curve, the aircraft rig and its contrail. Loaded lazily after the hero paints.
  *
  * The aircraft is a HUD flight-path-marker stand-in until the sourced Concorde
  * GLB is placed in public/models/ — set MODEL_URL to wire it in.
@@ -31,22 +31,37 @@ function hasWebGL(): boolean {
   }
 }
 
-/** HUD flight-path marker: circle, wings, fin — drawn once to a texture. */
+/** The aircraft: a Concorde-style delta, top-down, nose up — a cyan HUD rendering drawn once to a texture. */
 function markerTexture(): CanvasTexture {
-  const s = 128, c = document.createElement('canvas');
+  const s = 160, c = document.createElement('canvas');
   c.width = c.height = s;
   const g = c.getContext('2d')!;
-  g.strokeStyle = '#7fd3ff';
-  g.lineWidth = 5;
-  g.lineCap = 'round';
-  g.shadowColor = 'rgba(127,211,255,.8)';
-  g.shadowBlur = 10;
+  const cx = s / 2;
+  // nose → fuselage flank → ogival leading edge → wingtip → straight trailing edge → tail, then mirrored
   g.beginPath();
-  g.arc(s / 2, s / 2, 16, 0, Math.PI * 2);
-  g.moveTo(s / 2 - 16, s / 2); g.lineTo(s / 2 - 50, s / 2);
-  g.moveTo(s / 2 + 16, s / 2); g.lineTo(s / 2 + 50, s / 2);
-  g.moveTo(s / 2, s / 2 - 16); g.lineTo(s / 2, s / 2 - 36);
+  g.moveTo(cx, 8);
+  g.lineTo(cx + 3, 28); g.lineTo(cx + 4.5, 58);
+  g.quadraticCurveTo(cx + 18, 92, cx + 52, 128);
+  g.lineTo(cx + 50, 134); g.lineTo(cx + 12, 133); g.lineTo(cx + 6, 146); g.lineTo(cx + 2.5, 152);
+  g.lineTo(cx, 154);
+  g.lineTo(cx - 2.5, 152); g.lineTo(cx - 6, 146); g.lineTo(cx - 12, 133); g.lineTo(cx - 50, 134); g.lineTo(cx - 52, 128);
+  g.quadraticCurveTo(cx - 18, 92, cx - 4.5, 58);
+  g.lineTo(cx - 3, 28);
+  g.closePath();
+  g.fillStyle = 'rgba(127,211,255,.3)';
+  g.strokeStyle = '#7fd3ff';
+  g.lineWidth = 3;
+  g.lineJoin = 'round';
+  g.shadowColor = 'rgba(127,211,255,.85)';
+  g.shadowBlur = 12;
+  g.fill();
   g.stroke();
+  // engine nacelles under each wing, the fin as a spine along the tail
+  g.shadowBlur = 0;
+  g.fillStyle = 'rgba(232,237,245,.8)';
+  g.fillRect(cx + 14, 108, 20, 24);
+  g.fillRect(cx - 34, 108, 20, 24);
+  g.fillRect(cx - 1, 96, 2, 50);
   const t = new CanvasTexture(c);
   t.colorSpace = SRGBColorSpace;
   return t;
@@ -66,6 +81,20 @@ function ringTexture(): CanvasTexture {
   return new CanvasTexture(c);
 }
 
+/** one soft puff of contrail */
+function puffTexture(): CanvasTexture {
+  const s = 64, c = document.createElement('canvas');
+  c.width = c.height = s;
+  const g = c.getContext('2d')!;
+  const grad = g.createRadialGradient(s / 2, s / 2, 0, s / 2, s / 2, s / 2);
+  grad.addColorStop(0, 'rgba(232,237,245,.9)');
+  grad.addColorStop(0.5, 'rgba(232,237,245,.35)');
+  grad.addColorStop(1, 'rgba(232,237,245,0)');
+  g.fillStyle = grad;
+  g.fillRect(0, 0, s, s);
+  return new CanvasTexture(c);
+}
+
 /** Returns false when WebGL is unavailable so the caller can use the 2D fallback. */
 export function startScene(canvas: HTMLCanvasElement): boolean {
   if (!hasWebGL()) return false;
@@ -73,7 +102,7 @@ export function startScene(canvas: HTMLCanvasElement): boolean {
   const reduced = getState().reduced;
 
   const renderer = new WebGLRenderer({ canvas, alpha: true, antialias: !mobile, powerPreference: 'high-performance' });
-  // phones were capped at 1.5 and the Earth read as mush; the scene is one sphere and two sprites
+  // phones were capped at 1.5 and the Earth read as mush; the scene is one sphere and a few sprites
   renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
   renderer.setClearColor(0x000000, 0);
   renderer.outputColorSpace = SRGBColorSpace;
@@ -122,7 +151,7 @@ export function startScene(canvas: HTMLCanvasElement): boolean {
   earth.scale.setScalar(EARTH_R);
   scene.add(earth);
 
-  /* ── stars: a dome behind the Earth; each one twinkles on its own phase ── */
+  /* ── stars: a dome behind the Earth; each one twinkles on its own phase, the dome drifts with scroll ── */
   const STAR_N = mobile ? 500 : 1400;
   const pos: number[] = [], phase: number[] = [];
   for (let i = 0; i < STAR_N; i++) {
@@ -186,6 +215,15 @@ export function startScene(canvas: HTMLCanvasElement): boolean {
     (o.material as { depthTest: boolean }).depthTest = false;
     o.renderOrder = 10;
   }
+  /* ── contrail: soft puffs sampled behind the aircraft, widening and fading with distance ── */
+  const PUFFS = mobile ? 14 : 26;
+  const puffTex = puffTexture();
+  const puffs = Array.from({ length: PUFFS }, () => {
+    const s = new Sprite(new SpriteMaterial({ map: puffTex, transparent: true, opacity: 0, depthWrite: false, depthTest: false, blending: AdditiveBlending }));
+    s.renderOrder = 9;
+    scene.add(s);
+    return s;
+  });
   // Sourced Concorde (see CREDITS.md). Loaded on demand so GLTFLoader costs nothing until the file exists.
   let model: Group | null = null;
   if (MODEL_URL) {
@@ -250,7 +288,10 @@ export function startScene(canvas: HTMLCanvasElement): boolean {
     rig.userData.heading = heading;
     const bankTarget = Math.max(-0.5, Math.min(0.5, (turn / Math.max(dt, 1e-3)) * 0.35));
     bank += (bankTarget - bank) * (1 - Math.exp(-dt * 3));
-    marker.material.rotation = -bank;
+    // the silhouette's nose follows the route; a sprite can't roll, so the wingspan foreshortens into the turn
+    marker.material.rotation = heading - Math.PI / 2;
+    const span = mobile ? 2.1 : 2.8;
+    marker.scale.set(span * Math.cos(bank * 0.9), span, 1);
     if (model) model.rotation.set(bank, 0, heading); // nose along the route, rolled into the turn
 
     // flown leg behind the plane; only the next stretch of the plan ahead of it
@@ -259,9 +300,21 @@ export function startScene(canvas: HTMLCanvasElement): boolean {
     planLine.geometry.setDrawRange(idx, Math.min(241 - idx, 70));
     (flownLine.material as LineBasicMaterial).opacity = 0.55 * (1 - 0.75 * smooth(0.88, 1, u)); // fades on final approach
 
+    // altitude 0..1: nothing on the ground, everything at cruise
+    const alt = smooth(0.06, 0.45, u) * (1 - smooth(0.84, 1, u));
+
+    // contrail: only at altitude; the puffs sit on the curve just flown, growing and thinning behind the plane
+    for (let k = 0; k < PUFFS; k++) {
+      const s = puffs[k], uk = u - (k + 1) * 0.004;
+      if (uk <= 0.02 || alt < 0.05) { s.material.opacity = 0; continue; }
+      curve.getPointAt(uk, tmpB);
+      s.position.copy(tmpB);
+      s.scale.setScalar((mobile ? 0.5 : 0.7) + k * (mobile ? 0.08 : 0.1));
+      s.material.opacity = 0.32 * (1 - k / PUFFS) * alt;
+    }
+
     // Earth limb, placed by angular radius: ~72° near the runway reads as a flat horizon,
     // ~25° at cruise shows the curvature. Its top edge sits on the runway line, rising at altitude.
-    const alt = smooth(0.06, 0.45, u) * (1 - smooth(0.84, 1, u));
     const rho = ((72 - 47 * Math.pow(alt, 0.7)) * Math.PI) / 180;
     const thetaTop = Math.atan((-0.86 + 0.22 * alt) * Math.tan((camera.fov * Math.PI) / 360));
     const dist = EARTH_R / Math.sin(rho), thetaC = thetaTop - rho;
@@ -276,6 +329,7 @@ export function startScene(canvas: HTMLCanvasElement): boolean {
     globe.rotation.y = -1.75 - u * 0.5 - spin;
     (atmo.material as ShaderMaterial).uniforms.uStrength.value = 0.35 + alt * 0.9;
     starMat.uniforms.uOpacity.value = smooth(0.25, 0.5, u) * (1 - smooth(0.86, 0.97, u));
+    stars.rotation.set(0.04 * u, -0.12 * u, 0); // parallax: the dome slides slowly against the scroll
 
     if (ringT >= 0) {
       ringT += dt;

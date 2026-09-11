@@ -22,13 +22,18 @@
   --dawn-bot: #7fa8cc;
   --cruise-top: #1b2a4e;
   --cruise-hi: #2a3f6b; /* lighter zenith: the long cruise stretch shouldn't read as flat near-black */
-  --cruise-bot: #070b1a;
+  --cruise-bot: #0b1226; /* the deepest blue stays a blue — never a flat black */
   --dusk-top: #3a2140;
   --dusk-bot: #f2a36b;
   --ink-dark: #0b1020;
   --ink-light: #e8edf5;
   --instr: #7fd3ff;
   --amber: #ff7a2f;
+  --teal: #63e6d2; /* tertiary, restrained: focus rings and secondary hovers only */
+
+  /* sky cross-fade state, 0–1; flight.ts writes the live values on <html> (the glass chrome reads them) */
+  --dawn: 1;
+  --dusk: 0;
 
   /* ink for the current section (set per phase class below) */
   --ink: var(--ink-light);

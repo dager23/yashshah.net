@@ -16,6 +16,8 @@ the alternative. All content comes unchanged from `src/data/*` and `src/content/
 | Clearances | `#clearances` | honours stamp themselves onto the page; Diagnostics paper (DOI) and patent as slips |
 | Landing | `#contact` | dusk sky, touchdown: *Approaching destination · Yash Shah · Contact channel available · [ Initiate contact ]* (email once forwarding is live, LinkedIn until then), résumé as a boarding pass that tilts under the pointer; footer is a flight strip |
 
+The aircraft is a Concorde-style delta silhouette (top-down, cyan HUD rendering) that follows its heading and foreshortens into turns, with a contrail of soft sprites at altitude — the same glyph on the WebGL scene, the 2D fallback and the route map. The toolkit is an overhead panel: sub-panels of toggle switches, all ON, each with its indicator (the only figure is the real item count). Instruments are never still: attitude balls and standby needles drift, the HUD horizon breathes, the centre display has CRT scan lines; once per session the panel powers up in sequence (`.is-boot`, sessionStorage). The header glass is dense only while a pale sky is behind it (`--pale`); over the cruise sky it clears to a see-through pane. Tags, chips and instrument labels use a condensed cut of Archivo (its wdth axis) rather than a third typeface. Teal (`--teal`) is the one tertiary accent: focus rings and secondary hovers.
+
 Every section eyebrow carries an altitude readout that follows the readout's profile (climb 10,000 → cruise 60,000 → 40,000 → 20,000 → 0 ft). A film-grain + vignette layer (`.film`) sits over the whole site. The one line of voice — "Apparently likes planes enough to build an entire portfolio around them" — is the user's own copy, under the About lead.
 
 ## Files
@@ -65,6 +67,7 @@ The plane is a HUD flight-path marker until the sourced model is in place.
 | Phone width (2026-09-12) | page is exactly viewport-wide (sections clip the panels' slide-in on x) |
 | Live-instrument pass (2026-09-12) | Lighthouse mobile unchanged at 97 · 100 · 100 · 100 (LCP 2.2 s, TBT 110 ms, CLS 0); log ↔ map sync, connectors, stamps, footer strip checked at 1440×900 and 375×812; share card rendered from `scripts/og.html` |
 | Cinematic pass (2026-09-12) | Lighthouse mobile 95 · 100 · 100 · 100 (LCP 2.2 s, TBT 180 ms, CLS 0) — the film grain is static on touch devices to keep the main thread free; HUD boot, inset flight plan, clouds, nav pill, map labels/plane, new Contact checked at 1440×900 and 375×812 |
+| Polish pass (2026-09-12) | Lighthouse mobile 95 · 100 · 100 · 100 (LCP 2.2 s, TBT 180 ms, CLS 0) with the browser idle. Lesson: animating anything *inside* the dashboard SVG (needles, attitude balls, the power-on of display groups) repaints the whole panel each frame — a run with those on every device scored 63 / TBT 1,030 ms; they are now desktop-only (`hover: hover`). Rim light and grain flicker also rest on touch devices |
 | JS (gzip) | ≈ 196 KB total (core 54 KB + router 6 KB; three.js 135 KB loads on first interaction) |
 | Contrast | every ink/sky/panel pairing computed ≥ 4.5:1 |
 | JS off | all content present in the static HTML |
