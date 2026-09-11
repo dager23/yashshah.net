@@ -198,15 +198,62 @@ function pushThrough(): void {
     .to(q('.deck__stage'), { autoAlpha: 0, duration: 0.3 }, 0.35);
 }
 
-/* ─── flight log ↔ route map: the leg into each role's city lights as you pass it ─── */
+/* ─── gate: the HUD boots — readouts settle character by character, the plan draws itself ─── */
+function bootHud(): void {
+  const spans = document.querySelectorAll<HTMLElement>('[data-boot]');
+  const plans = document.querySelectorAll<Element>('.deck__route');
+  if (reduced || !spans.length) { plans.forEach((p) => p.classList.add('is-drawn')); return; }
+  const CH = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  const STEPS = 14;
+  spans.forEach((el, i) => {
+    const final = el.dataset.boot ?? '';
+    let step = 0;
+    setTimeout(() => {
+      const id = setInterval(() => {
+        step++;
+        el.textContent = [...final]
+          .map((ch, j) => (/[A-Z0-9]/.test(ch) && j > (step / STEPS) * final.length ? CH[(j * 7 + step * 13) % CH.length] : ch))
+          .join('');
+        if (step >= STEPS) { clearInterval(id); el.textContent = final; }
+      }, 45);
+    }, 350 + (i % 3) * 180); // wide and tall stages carry the same readouts; stagger within a block
+  });
+  setTimeout(() => plans.forEach((p) => p.classList.add('is-drawn')), 900);
+}
+
+/* ─── header: a liquid pill slides under the nav item you're over ─────── */
+function navPill(): void {
+  const nav = document.querySelector<HTMLElement>('.hdr nav');
+  const pill = nav?.querySelector<HTMLElement>('.hdr__pill');
+  if (!nav || !pill || !canHover) return;
+  nav.addEventListener('pointerover', (e) => {
+    const a = (e.target as Element).closest('a');
+    if (!a) return;
+    pill.style.left = `${a.offsetLeft - 10}px`;
+    pill.style.width = `${a.offsetWidth + 20}px`;
+    pill.classList.add('is-on');
+  });
+  nav.addEventListener('pointerleave', () => pill.classList.remove('is-on'));
+}
+
+/* ─── flight log ↔ route map: the leg into each role's city lights as you pass it,
+   and the marker flies it ─── */
 function logSync(): void {
   const map = document.querySelector('.routemap');
   if (!map) return;
+  const plane = map.querySelector<SVGGElement>('.route-plane');
   const light = (entry: HTMLElement) => {
     const code = entry.dataset.code;
     document.querySelectorAll('.entry.is-here, .routemap .is-active').forEach((el) => el.classList.remove('is-here', 'is-active'));
     entry.classList.add('is-here');
     map.querySelectorAll(`[data-code="${code}"], [data-to="${code}"]`).forEach((el) => el.classList.add('is-active'));
+    const arc = map.querySelector<SVGPathElement>(`.route-arc[data-to="${code}"]`);
+    if (plane && arc && !reduced) {
+      plane.style.offsetPath = `path("${arc.getAttribute('d')}")`;
+      plane.classList.remove('is-flying');
+      plane.getBoundingClientRect(); // restart the animation
+      plane.classList.add('is-flying');
+    }
   };
   document.querySelectorAll<HTMLElement>('.entry[data-code]').forEach((el) => {
     ScrollTrigger.create({
@@ -367,6 +414,8 @@ function initPage(): void {
     stamps();
   });
   passTilt();
+  navPill();
+  bootHud();
   lenis?.resize();
   ScrollTrigger.refresh();
   update(ScrollTrigger.maxScroll(window) ? scrollY / ScrollTrigger.maxScroll(window) : 0);

@@ -12,12 +12,14 @@ export const idents: Record<string, string> = {
   videogpt: 'VIDGP',
 };
 
-/** Geographic coordinates for the flight-log route map (lon, lat). */
+/** Geographic coordinates for the flight-log route map (lon, lat), plus where its label sits. */
 export interface City {
   code: string;
   name: string;
   lon: number;
   lat: number;
+  /** label offset from the dot in map units; Chennai and Bengaluru are 3° apart, Seoul is at the map's edge */
+  label: { dx: number; dy: number; anchor: 'start' | 'end' };
 }
 
 /**
@@ -25,11 +27,11 @@ export interface City {
  * order they began. VIT's campus is listed as Chennai in education.ts.
  */
 export const route: City[] = [
-  { code: 'MAA', name: 'Chennai', lon: 80.27, lat: 13.08 },
-  { code: 'LYS', name: 'Lyon', lon: 4.84, lat: 45.76 },
-  { code: 'BOM', name: 'Mumbai', lon: 72.88, lat: 19.08 },
-  { code: 'ICN', name: 'Seoul', lon: 126.98, lat: 37.57 },
-  { code: 'BLR', name: 'Bengaluru', lon: 77.59, lat: 12.97 },
+  { code: 'MAA', name: 'Chennai', lon: 80.27, lat: 13.08, label: { dx: 14, dy: 8, anchor: 'start' } },
+  { code: 'LYS', name: 'Lyon', lon: 4.84, lat: 45.76, label: { dx: 14, dy: -12, anchor: 'start' } },
+  { code: 'BOM', name: 'Mumbai', lon: 72.88, lat: 19.08, label: { dx: -14, dy: -12, anchor: 'end' } },
+  { code: 'ICN', name: 'Seoul', lon: 126.98, lat: 37.57, label: { dx: -14, dy: -12, anchor: 'end' } },
+  { code: 'BLR', name: 'Bengaluru', lon: 77.59, lat: 12.97, label: { dx: -14, dy: 8, anchor: 'end' } },
 ];
 
 /** Airport code for a place named in experience.ts / education.ts (by city); null when the route doesn't pass there. */

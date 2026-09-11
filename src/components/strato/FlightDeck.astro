@@ -3,9 +3,12 @@
  * Gate hero: the view from the flight deck at dawn — windscreen full-bleed down to the
  * glareshield. The name sits on the HUD, the pitch on the centre display. Two drawings
  * share one stage — wide (1440×900) and tall (390×844) — scaled to cover the viewport;
- * flight.ts scrubs the push through the windscreen.
- * Instrument values are the readout's gate state; nothing else on the panel makes a claim.
+ * flight.ts scrubs the push through the windscreen and boots the HUD readouts.
+ * Instrument values are the readout's gate state plus the base's coordinates and the
+ * flight plan from flightplan.ts; nothing else on the panel makes a claim.
  */
+import { route } from '../../data/flightplan';
+
 interface Props {
   name: string;
   pitch: string;
@@ -19,6 +22,13 @@ const at = (cx: number, cy: number, r: number, deg: number) => {
   return `${r1(cx + r * Math.sin(a))} ${r1(cy - r * Math.cos(a))}`;
 };
 const HAIR = 'rgba(232,237,245,.14)';
+
+/* ─── HUD data: the base's coordinates and the flight plan (flightplan.ts) ─── */
+const base = route[route.length - 1];
+const coord = (v: number, pos: string, neg: string) => `${Math.abs(v).toFixed(2)} ${v >= 0 ? pos : neg}`;
+const LAT = `LAT ${coord(base.lat, 'N', 'S')}`;
+const LON = `LON ${coord(base.lon, 'E', 'W')}`;
+const FPLN = `FPLN ${route.map((c) => c.code).join(' ')}`;
 
 /* ─── the view: dawn sky (same gradient as the page's dawn sky), terrain, runway ─── */
 function view(p: string, w: number, h: number, hz: number, vx: number, bot: number, half: number, n: number): string {
@@ -56,11 +66,29 @@ function view(p: string, w: number, h: number, hz: number, vx: number, bot: numb
 <g class="deck__lights" fill="#e8edf5">${lights.join('')}</g>`;
 }
 
-/* ─── HUD symbology: horizon, one pitch rung, flight-path marker ─── */
+/* ─── HUD symbology: horizon, one pitch rung, flight-path marker, flight-plan inset ─── */
 const fpm = (x: number, y: number, s: number) =>
   `<g transform="translate(${x} ${y}) scale(${s})" stroke="#7fd3ff" stroke-width="2.4" fill="none" stroke-linecap="round"><circle r="7"/><path d="M-7 0H-24M7 0H24M0-7V-17"/></g>`;
-const wideSym = `<g stroke="#7fd3ff" stroke-width="1.6" fill="none" opacity=".85"><path d="M 380 330 H 668 M 772 330 H 1060"/><path d="M 604 250 H 668 V 258 M 836 250 H 772 V 258"/></g>${fpm(720, 330, 1.25)}`;
-const tallSym = `<g stroke="#7fd3ff" stroke-width="1.4" fill="none" opacity=".85"><path d="M 44 262 H 170 M 220 262 H 346"/><path d="M 140 206 H 176 V 212 M 250 206 H 214 V 212"/></g>${fpm(195, 262, 0.95)}`;
+
+/* the flight plan on real geography (same window as the route map), drawn on when the HUD boots */
+const LABEL: Record<string, [number, number, 'start' | 'end']> = {
+  MAA: [10, 17, 'start'], BLR: [-10, 5, 'end'], BOM: [-10, -7, 'end'], ICN: [10, -7, 'start'], LYS: [10, -7, 'start'],
+};
+function inset(x: number, y: number, s: number): string {
+  const pt = (c: (typeof route)[number]) => [((c.lon + 15) / 160) * 300, ((65 - c.lat) / 70) * 130];
+  const pts = route.map(pt);
+  const line = 'M ' + pts.map(([px, py]) => `${r1(px)} ${r1(py)}`).join(' L ');
+  const star = (cx: number, cy: number) =>
+    `M ${r1(cx)} ${r1(cy - 5)} L ${r1(cx + 1.7)} ${r1(cy - 1.7)} L ${r1(cx + 5)} ${r1(cy)} L ${r1(cx + 1.7)} ${r1(cy + 1.7)} L ${r1(cx)} ${r1(cy + 5)} L ${r1(cx - 1.7)} ${r1(cy + 1.7)} L ${r1(cx - 5)} ${r1(cy)} L ${r1(cx - 1.7)} ${r1(cy - 1.7)} Z`;
+  const wps = route.map((c, i) => {
+    const [px, py] = pts[i], [dx, dy, anchor] = LABEL[c.code] ?? [10, -7, 'start'];
+    return `<g class="wp" style="--i: ${i}"><path d="${star(px, py)}" fill="#e8edf5"/><text x="${r1(px + dx)}" y="${r1(py + dy)}" text-anchor="${anchor}">${c.code}</text></g>`;
+  }).join('');
+  return `<g class="deck__route" transform="translate(${x} ${y}) scale(${s})" font-size="11" fill="#7fd3ff" letter-spacing="1">
+<path class="deck__route-line" d="${line}" pathLength="1" fill="none" stroke="#7fd3ff" stroke-width="1.6" stroke-dasharray="1" stroke-dashoffset="1"/>${wps}</g>`;
+}
+const wideSym = `<g stroke="#7fd3ff" stroke-width="1.6" fill="none" opacity=".85"><path d="M 380 330 H 668 M 772 330 H 1060"/><path d="M 604 250 H 668 V 258 M 836 250 H 772 V 258"/></g>${fpm(720, 330, 1.25)}${inset(1076, 196, 1)}`;
+const tallSym = `<g stroke="#7fd3ff" stroke-width="1.4" fill="none" opacity=".85"><path d="M 44 262 H 170 M 220 262 H 346"/><path d="M 140 206 H 176 V 212 M 250 206 H 214 V 212"/></g>${fpm(195, 262, 0.95)}${inset(206, 118, 0.55)}`;
 
 /* ─── cockpit hardware ─── */
 function defs(p: string): string {
@@ -191,23 +219,43 @@ ${[[12, 520], [378, 520], [12, 834], [378, 834]].map(fastener).join('')}
 <path d="M 0 474 Q 195 464 390 474 L 390 502 Q 195 494 0 502 Z" fill="#0b1020"/>
 <rect x="60" y="470" width="270" height="30" rx="3" fill="#1b2a4e" stroke="rgba(232,237,245,.16)"/>
 ${winT(72, 56, '0.00', '#7fd3ff')}${knob(140, 485, 7, T)}${winT(156, 70, '00,000', '#7fd3ff')}${knob(238, 485, 7, T)}${winT(254, 66, 'GATE', '#ff7a2f', true)}`;
+
+/* thin cloud bands just above the horizon (stage units: x, width, height, height above the horizon, drift phase) */
+const wideClouds = [[60, 560, 54, 60, '0s'], [620, 440, 44, 46, '-32s'], [1040, 520, 50, 68, '-58s']];
+const tallClouds = [[-30, 260, 28, 34, '0s'], [150, 200, 22, 26, '-38s'], [270, 240, 26, 40, '-60s']];
+const cloud = ([x, w, h, dy, d]: (number | string)[]) => `--x: ${x}; --w: ${w}; --h: ${h}; --dy: ${dy}; animation-delay: ${d}`;
 ---
 
 <section class="leg deck phase-dawn" data-leg="gate" id="gate" aria-labelledby="hero-name">
   <div class="deck__clip">
     <div class="deck__stage">
       <div class="deck__art deck__art--wide" aria-hidden="true">
-        <svg class="deck__view" viewBox="0 0 1440 900" preserveAspectRatio="none" set:html={wideView} />
+        <div class="deck__view">
+          <svg viewBox="0 0 1440 900" preserveAspectRatio="none" set:html={wideView} />
+          <i class="deck__stars"></i>
+          {wideClouds.map((c) => <i class="deck__cloud" style={cloud(c)}></i>)}
+        </div>
         <svg class="deck__frame" viewBox="0 0 1440 900" preserveAspectRatio="none" set:html={wideFrame} />
       </div>
       <div class="deck__art deck__art--tall" aria-hidden="true">
-        <svg class="deck__view" viewBox="0 0 390 844" preserveAspectRatio="none" set:html={tallView} />
+        <div class="deck__view">
+          <svg viewBox="0 0 390 844" preserveAspectRatio="none" set:html={tallView} />
+          <i class="deck__stars"></i>
+          {tallClouds.map((c) => <i class="deck__cloud" style={cloud(c)}></i>)}
+        </div>
         <svg class="deck__frame" viewBox="0 0 390 844" preserveAspectRatio="none" set:html={tallFrame} />
       </div>
       <div class="deck__hud">
         <svg class="deck__sym deck__sym--wide" viewBox="0 0 1440 900" preserveAspectRatio="none" aria-hidden="true" set:html={wideSym} />
         <svg class="deck__sym deck__sym--tall" viewBox="0 0 390 844" preserveAspectRatio="none" aria-hidden="true" set:html={tallSym} />
+        <div class="deck__data deck__data--l mono" aria-hidden="true">
+          <span data-boot={LAT}>{LAT}</span><span data-boot={LON}>{LON}</span><span data-boot="GS 000 KT">GS 000 KT</span>
+        </div>
+        <div class="deck__data deck__data--r mono" aria-hidden="true">
+          <span data-boot={FPLN}>{FPLN}</span><span data-boot="STATUS READY">STATUS READY</span>
+        </div>
         <h1 id="hero-name" class="deck__name"><span>{first}</span> <span>{rest.join(' ')}</span></h1>
+        <a class="deck__enter mono" href="#about"><b>[</b> Enter flight log <i aria-hidden="true">↓</i> <b>]</b></a>
       </div>
       <div class="deck__screen"><p class="deck__pitch">{pitch}</p></div>
     </div>

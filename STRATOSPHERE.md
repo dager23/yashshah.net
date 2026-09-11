@@ -8,13 +8,15 @@ the alternative. All content comes unchanged from `src/data/*` and `src/content/
 
 | Phase | Section | What happens |
 | --- | --- | --- |
-| Gate / takeoff | hero `#gate` | the flight deck at dawn: full-bleed windscreen (no frame), name on the HUD, pitch on the centre display; scrolling pushes through into the sky, and the readout undocks as the cockpit clears |
+| Gate / takeoff | hero `#gate` | the flight deck at dawn: full-bleed windscreen, name on the HUD, pitch on the centre display. On load the HUD boots — the base's coordinates and the flight plan settle character by character, the plan draws itself in an inset — clouds drift on the horizon, faint stars at the zenith, `[ Enter flight log ↓ ]` under the name; scrolling pushes through into the sky and the readout undocks as the cockpit clears |
 | Climb | `#about` (about + toolkit) | sky cross-fades to cruise; toolkit as instrument gauges |
 | Mach 1 | entering `#waypoints` | one vapour ring, a shock line sweeps the viewport, readout flashes amber |
 | Cruise | `#waypoints` | Earth limb + twinkling stars (the globe keeps turning on desktop); each project docks in as a display unit (EFMIX → URBST → VIDGP → DCATH), threaded by a dashed leg with star markers |
 | Flight log | `#log` | experience as logbook entries with airport-code chips; the route map sits beside them (sticky on desktop) and the leg into each role's city lights up as you pass it |
 | Clearances | `#clearances` | honours stamp themselves onto the page; Diagnostics paper (DOI) and patent as slips |
-| Landing | `#contact` | dusk sky, touchdown, résumé as a boarding pass that tilts under the pointer; footer is a flight strip |
+| Landing | `#contact` | dusk sky, touchdown: *Approaching destination · Yash Shah · Contact channel available · [ Initiate contact ]* (email once forwarding is live, LinkedIn until then), résumé as a boarding pass that tilts under the pointer; footer is a flight strip |
+
+Every section eyebrow carries an altitude readout that follows the readout's profile (climb 10,000 → cruise 60,000 → 40,000 → 20,000 → 0 ft). A film-grain + vignette layer (`.film`) sits over the whole site. The one line of voice — "Apparently likes planes enough to build an entire portfolio around them" — is the user's own copy, under the About lead.
 
 ## Files
 
@@ -62,6 +64,7 @@ The plane is a HUD flight-path marker until the sourced model is in place.
 | Flight deck (2026-09-12) | wide stage at 1440×900, tall stage at 375×812; the push-through clears by 65 % of the gate, before liftoff and the dawn → cruise fade; readout undocks as it clears |
 | Phone width (2026-09-12) | page is exactly viewport-wide (sections clip the panels' slide-in on x) |
 | Live-instrument pass (2026-09-12) | Lighthouse mobile unchanged at 97 · 100 · 100 · 100 (LCP 2.2 s, TBT 110 ms, CLS 0); log ↔ map sync, connectors, stamps, footer strip checked at 1440×900 and 375×812; share card rendered from `scripts/og.html` |
+| Cinematic pass (2026-09-12) | Lighthouse mobile 95 · 100 · 100 · 100 (LCP 2.2 s, TBT 180 ms, CLS 0) — the film grain is static on touch devices to keep the main thread free; HUD boot, inset flight plan, clouds, nav pill, map labels/plane, new Contact checked at 1440×900 and 375×812 |
 | JS (gzip) | ≈ 196 KB total (core 54 KB + router 6 KB; three.js 135 KB loads on first interaction) |
 | Contrast | every ink/sky/panel pairing computed ≥ 4.5:1 |
 | JS off | all content present in the static HTML |

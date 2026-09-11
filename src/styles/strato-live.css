@@ -1,7 +1,84 @@
 /* ─── Stratosphere — live instruments: things that move, glow or react ──────────
    Loaded after strato-sections.css; a few rules deliberately override it. */
 
-/* ─── hero: runway edge lights breathe (static under reduced motion via base.css) ─── */
+/* ─── film: grain + vignette over everything, faint (static grain under reduced motion) ─── */
+.film { position: fixed; inset: 0; z-index: 45; pointer-events: none; }
+.film::before {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(120% 90% at 50% 50%, transparent 55%, rgb(7 11 26 / 0.38) 100%);
+}
+.film::after {
+  content: ''; position: absolute; inset: -12%;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.5 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 260px 260px;
+  opacity: 0.055; mix-blend-mode: overlay;
+  animation: grain 1.4s steps(7) infinite;
+}
+@keyframes grain {
+  0% { transform: translate(0, 0); } 15% { transform: translate(-3%, 2%); } 30% { transform: translate(2%, -4%); }
+  45% { transform: translate(-4%, -1%); } 60% { transform: translate(3%, 3%); } 75% { transform: translate(-1%, 4%); }
+  90% { transform: translate(4%, -2%); } 100% { transform: translate(0, 0); }
+}
+
+/* ─── hero: the view is now a layer (sky drawing + stars + clouds) that pushes through together ─── */
+.deck__view { position: absolute; inset: 0; }
+.deck__stage { --hz: 330; --data-y: 118; --data-x: 60; --data-fs: 13; --enter-y: 488; --enter-fs: 14; }
+@media (max-aspect-ratio: 7/10) {
+  .deck__stage { --hz: 262; --data-y: 66; --data-x: 20; --data-fs: 9.5; --enter-y: 418; --enter-fs: 10.5; }
+}
+/* faint stars at the zenith of the dawn sky */
+.deck__stars {
+  position: absolute; left: 0; top: 0; width: 100%; height: calc(var(--u) * var(--hz) * 0.7); opacity: 0.3;
+  background-image:
+    radial-gradient(1.5px 1.5px at 8% 14%, #e8edf5 50%, transparent), radial-gradient(1px 1px at 21% 32%, #e8edf5 50%, transparent),
+    radial-gradient(1.5px 1.5px at 34% 9%, #e8edf5 50%, transparent), radial-gradient(1px 1px at 47% 25%, #e8edf5 50%, transparent),
+    radial-gradient(2px 2px at 60% 16%, #e8edf5 50%, transparent), radial-gradient(1px 1px at 71% 38%, #e8edf5 50%, transparent),
+    radial-gradient(1.5px 1.5px at 83% 11%, #e8edf5 50%, transparent), radial-gradient(1px 1px at 92% 29%, #e8edf5 50%, transparent),
+    radial-gradient(1px 1px at 15% 48%, #e8edf5 50%, transparent), radial-gradient(1.5px 1.5px at 55% 44%, #e8edf5 50%, transparent),
+    radial-gradient(1px 1px at 78% 52%, #e8edf5 50%, transparent), radial-gradient(1px 1px at 29% 56%, #e8edf5 50%, transparent);
+  animation: twinkle 7s ease-in-out infinite alternate;
+}
+@keyframes twinkle { from { opacity: 0.22; } to { opacity: 0.38; } }
+/* thin cloud bands drifting along the horizon; blurred once, then only moved */
+.deck__cloud {
+  position: absolute; display: block;
+  left: calc(var(--u) * var(--x)); top: calc(var(--u) * (var(--hz) - var(--dy)));
+  width: calc(var(--u) * var(--w)); height: calc(var(--u) * var(--h));
+  border-radius: 50%; background: rgb(232 237 245 / 0.55);
+  filter: blur(calc(var(--u) * 14)); will-change: transform;
+  animation: drift 110s ease-in-out infinite alternate;
+}
+@keyframes drift { from { transform: translateX(-4%); } to { transform: translateX(6%); } }
+/* HUD readouts: settle character by character on load (flight.ts) */
+.deck__data {
+  position: absolute; top: calc(var(--u) * var(--data-y)); display: grid; gap: 0.5em;
+  font-size: calc(var(--u) * var(--data-fs)); color: var(--instr);
+  text-shadow: 0 0 0.6em rgb(127 211 255 / 0.5), 0 0 0.1em rgb(127 211 255 / 0.8);
+}
+.deck__data--l { left: calc(var(--u) * var(--data-x)); }
+.deck__data--r { right: calc(var(--u) * var(--data-x)); text-align: right; }
+/* the flight plan draws itself; each waypoint pops in along it */
+.deck__route text { font-family: var(--font-mono); font-weight: 500; }
+.js .deck__route .wp { opacity: 0; transform-box: fill-box; transform-origin: center; transform: scale(0.3); }
+.js .deck__route.is-drawn .deck__route-line { animation: draw 2.4s var(--ease-out) forwards; }
+.js .deck__route.is-drawn .wp { animation: pop 0.5s var(--ease-out) forwards; animation-delay: calc(0.25s + var(--i) * 0.45s); }
+@keyframes draw { to { stroke-dashoffset: 0; } }
+@keyframes pop { to { opacity: 1; transform: none; } }
+html:not(.js) .deck__route-line { stroke-dashoffset: 0; }
+/* HUD control under the name */
+.deck__enter {
+  position: absolute; left: 0; right: 0; top: calc(var(--u) * var(--enter-y)); width: max-content; margin: 0 auto;
+  padding: 0.55em 1.1em; font-size: calc(var(--u) * var(--enter-fs)); font-weight: 600;
+  color: var(--instr); text-decoration: none; pointer-events: auto;
+  text-shadow: 0 0 0.6em rgb(127 211 255 / 0.55);
+  transition: letter-spacing 0.4s var(--ease-out), color 0.3s;
+}
+.deck__enter b { font-weight: 500; opacity: 0.7; transition: transform 0.4s var(--ease-out); display: inline-block; }
+.deck__enter i { font-style: normal; display: inline-block; animation: nudge 2.2s ease-in-out infinite; }
+.deck__enter:hover { letter-spacing: 0.14em; color: var(--ink-light); }
+.deck__enter:hover b:first-child { transform: translateX(-0.3em); }
+.deck__enter:hover b:last-child { transform: translateX(0.3em); }
+@keyframes nudge { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(0.25em); } }
 .js .deck__lights circle { animation: rwy-blink 2.8s ease-in-out infinite; }
 .js .deck__lights circle:nth-child(3n) { animation-delay: -0.9s; }
 .js .deck__lights circle:nth-child(3n + 1) { animation-delay: -1.9s; }
@@ -23,40 +100,89 @@
 }
 @keyframes shock-flash { 0% { opacity: 0.28; } 100% { opacity: 0; } }
 
-/* ─── liquid glass v2: refractive rim, pointer-tracked specular, tint follows the sky ───
-   --dawn / --dusk are the sky cross-fade values (flight.ts); --mx / --my the pointer. */
+/* ─── liquid glass v3: bevelled lens edge, a light travelling the rim, pointer specular,
+   tint that follows the sky. --dawn / --dusk from flight.ts; --mx / --my is the pointer. ─── */
+@property --ra { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
 .hdr, .readout { --mx: 50%; --my: 0%; --dawn: 1; --dusk: 0; border-color: transparent; background-clip: padding-box; }
 .hdr {
+  -webkit-backdrop-filter: blur(24px) saturate(200%) brightness(1.06);
+  backdrop-filter: blur(24px) saturate(200%) brightness(1.06);
   box-shadow:
-    inset 1px 1px 0 rgb(232 237 245 / 0.42),
-    inset -1px -1px 0 color-mix(in srgb, var(--instr), var(--amber) calc(var(--dusk) * 100%)),
-    inset 0 -12px 24px -14px color-mix(in srgb, rgb(127 211 255 / 0.6), rgb(255 122 47 / 0.6) calc(var(--dusk) * 100%)),
-    0 12px 32px -14px rgb(7 11 26 / 0.85);
+    inset 0 1px 0 rgb(255 255 255 / 0.45),
+    inset 0 2px 8px rgb(255 255 255 / 0.12),
+    inset 0 -1px 0 color-mix(in srgb, rgb(127 211 255 / 0.35), rgb(255 122 47 / 0.45) calc(var(--dusk) * 100%)),
+    inset 0 -14px 26px -16px color-mix(in srgb, rgb(127 211 255 / 0.6), rgb(255 122 47 / 0.6) calc(var(--dusk) * 100%)),
+    0 1px 0 rgb(7 11 26 / 0.6),
+    0 22px 44px -22px rgb(7 11 26 / 0.95);
 }
 @media (min-width: 768px) {
   .readout {
+    -webkit-backdrop-filter: blur(22px) saturate(190%);
+    backdrop-filter: blur(22px) saturate(190%);
     box-shadow:
       var(--bezel),
-      inset 1px 1px 0 rgb(232 237 245 / 0.38),
-      inset -1px -1px 0 color-mix(in srgb, var(--instr), var(--amber) calc(var(--dusk) * 100%));
+      inset 0 1px 0 rgb(255 255 255 / 0.4),
+      inset 0 2px 8px rgb(255 255 255 / 0.1),
+      inset 0 -1px 0 color-mix(in srgb, rgb(127 211 255 / 0.35), rgb(255 122 47 / 0.45) calc(var(--dusk) * 100%));
   }
 }
 .hdr::before, .hdr::after, .readout::before, .readout::after {
   content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: -1;
 }
-/* the specular: a soft lens highlight that slides under the pointer */
+/* the lens: a soft specular that slides under the pointer, plus dawn haze that clears in cruise */
 .hdr::before, .readout::before {
-  background: radial-gradient(11rem 3.5rem at var(--mx) var(--my), rgb(232 237 245 / 0.26), transparent 70%);
-  transition: opacity 0.3s;
+  background:
+    radial-gradient(11rem 3.5rem at var(--mx) var(--my), rgb(232 237 245 / 0.28), transparent 70%),
+    linear-gradient(180deg, rgb(221 230 238 / calc(0.22 * var(--dawn))), rgb(221 230 238 / calc(0.04 * var(--dawn))));
 }
-/* dawn haze on the glass at the gate; it clears as the sky turns to cruise */
+/* the rim: a thin ring with a light travelling round it; cyan turning amber at dusk */
 .hdr::after, .readout::after {
-  background: linear-gradient(180deg, rgb(221 230 238 / 0.22), rgb(221 230 238 / 0.04));
-  opacity: var(--dawn);
+  padding: 1.5px;
+  background: conic-gradient(from var(--ra),
+    transparent 0 16%, rgb(232 237 245 / 0.9) 23%, transparent 30%,
+    transparent 56%, color-mix(in srgb, var(--instr), var(--amber) calc(var(--dusk) * 100%)) 63%, transparent 70%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  opacity: 0.85;
+  animation: rim 9s linear infinite;
 }
+.readout::after { animation-duration: 13s; }
+@keyframes rim { to { --ra: 360deg; } }
 .hdr > *, .readout > * { position: relative; z-index: 1; }
+/* nav: a liquid pill slides under the item you're over (flight.ts positions it) */
+.hdr nav { position: relative; }
+.hdr__pill {
+  position: absolute; top: -0.4rem; bottom: -0.4rem; left: 0; width: 0; border-radius: 999px; z-index: 0;
+  background: rgb(232 237 245 / 0.12);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.32), inset 0 -1px 0 rgb(127 211 255 / 0.25);
+  opacity: 0; transition: left 0.35s var(--ease-out), width 0.35s var(--ease-out), opacity 0.25s;
+}
+.hdr__pill.is-on { opacity: 1; }
+.hdr nav a { position: relative; z-index: 1; }
+
+/* ─── section eyebrows carry an altitude readout; HUD-style controls ─── */
+.eyebrow b { color: var(--instr); font-weight: 600; text-shadow: 0 0 0.6em rgb(127 211 255 / 0.4); }
+.btn--hud {
+  color: var(--instr); border-color: rgb(127 211 255 / 0.45);
+  text-shadow: 0 0 0.6em rgb(127 211 255 / 0.5);
+  box-shadow: inset 0 0 0 0 rgb(127 211 255 / 0);
+}
+.btn--hud:hover { border-color: var(--instr); background: rgb(127 211 255 / 0.1); color: var(--ink-light); }
+.btn--hud b { font-weight: 500; opacity: 0.7; }
+/* the one line of voice, under the About lead */
+.aside {
+  display: flex; align-items: center; gap: 0.75em; margin-top: 1.25rem; max-width: 40ch;
+  color: var(--ink-3); font-size: var(--t-small); line-height: 1.5;
+}
+.aside svg { flex: none; width: 1.6em; height: 1.2em; color: var(--instr); filter: drop-shadow(0 0 4px rgb(127 211 255 / 0.5)); }
+.land__status { display: inline-flex; align-items: center; gap: 0.6em; margin-top: 1.25rem; color: var(--instr); }
+.land__status::before { content: ''; width: 0.5em; height: 0.5em; border-radius: 50%; background: var(--instr); box-shadow: 0 0 8px var(--instr); animation: blip 1.8s ease-in-out infinite; }
+@keyframes blip { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
 
 /* ─── cruise: a dashed leg line threads the project panels, a star marks each waypoint ─── */
+.wpt__star { display: none; }
 @media (min-width: 900px) {
   .wpt { position: relative; }
   .wpt::before {
@@ -64,7 +190,7 @@
     border-left: 1px dashed rgb(127 211 255 / 0.45);
   }
   .wpt__star {
-    position: absolute; top: 50%; left: calc(var(--pad-x) - 1.6rem); width: 14px; height: 14px; translate: -50% -50%;
+    display: block; position: absolute; top: 50%; left: calc(var(--pad-x) - 1.6rem); width: 14px; height: 14px; translate: -50% -50%;
     background: var(--ink-light);
     clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%);
     filter: drop-shadow(0 0 5px var(--instr));
@@ -72,8 +198,6 @@
   }
   .wpt:has(.panel.is-docked) .wpt__star { scale: 1.5; background: var(--amber); filter: drop-shadow(0 0 6px rgb(255 122 47 / 0.8)); }
 }
-.wpt__star { display: none; }
-@media (min-width: 900px) { .wpt__star { display: block; } }
 
 /* ─── flight log ↔ route map ─── */
 .log { display: grid; gap: 2.5rem; align-items: start; }
@@ -95,6 +219,10 @@
 .route-city__ping { fill: none; stroke: var(--instr); stroke-width: 2; opacity: 0; transform-box: fill-box; transform-origin: center; }
 .route-city.is-active .route-city__ping { animation: ping 1.8s ease-out infinite; }
 @keyframes ping { 0% { transform: scale(1); opacity: 0.9; } 100% { transform: scale(4); opacity: 0; } }
+/* the marker flies the lit leg (flight.ts sets its offset-path from the arc) */
+.route-plane { offset-rotate: auto; offset-distance: 0%; opacity: 0; filter: drop-shadow(0 0 6px rgb(127 211 255 / 0.8)); }
+.route-plane.is-flying { animation: fly 3s cubic-bezier(0.45, 0.05, 0.25, 1) forwards; }
+@keyframes fly { 0% { offset-distance: 0%; opacity: 0; } 10% { opacity: 1; } 100% { offset-distance: 100%; opacity: 1; } }
 
 /* ─── clearances: each honour is stamped onto the page once it's in view ─── */
 .stamp { outline: 1px solid var(--instr); outline-offset: -5px; }
@@ -124,8 +252,14 @@
 .foot__route b { font-weight: 600; }
 .foot__route i { display: inline-block; width: 1.4em; height: 1px; background: currentColor; opacity: 0.55; }
 
+/* phones keep the grain but not its flicker: the constant repaint costs main-thread time on slow devices */
+@media (hover: none) { .film::after { animation: none; } }
 @media (prefers-reduced-motion: reduce) {
   .shock { display: none; }
+  .film::after { animation: none; }
   .route-city.is-active .route-city__ping { animation: none; }
+  .route-plane { display: none; }
   .pass, .pass:hover { transform: none; }
+  .js .deck__route .wp { opacity: 1; transform: none; }
+  .js .deck__route-line { stroke-dashoffset: 0; }
 }
