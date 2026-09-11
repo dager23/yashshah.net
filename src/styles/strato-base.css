@@ -1,0 +1,211 @@
+/* ─── Stratosphere — fonts, tokens, base, instrument layer ─────────────── */
+
+@font-face {
+  font-family: 'Archivo Variable';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  font-stretch: 62% 125%;
+  src: url('/fonts/archivo-latin-wdth-normal.woff2') format('woff2-variations');
+}
+@font-face {
+  font-family: 'JetBrains Mono Variable';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 800;
+  src: url('/fonts/jetbrains-mono-latin-wght-normal.woff2') format('woff2-variations');
+}
+
+:root {
+  /* sky phases (the brief's palette — no other colours) */
+  --dawn-top: #dde6ee;
+  --dawn-bot: #7fa8cc;
+  --cruise-top: #1b2a4e;
+  --cruise-bot: #070b1a;
+  --dusk-top: #3a2140;
+  --dusk-bot: #f2a36b;
+  --ink-dark: #0b1020;
+  --ink-light: #e8edf5;
+  --instr: #7fd3ff;
+  --amber: #ff7a2f;
+
+  /* ink for the current section (set per phase class below) */
+  --ink: var(--ink-light);
+  --ink-rgb: 232 237 245;
+  --ink-2: rgb(var(--ink-rgb) / 0.78);
+  --ink-3: rgb(var(--ink-rgb) / 0.64);
+  --hair: rgb(var(--ink-rgb) / 0.2);
+  --hair-2: rgb(var(--ink-rgb) / 0.38);
+  --glass: rgb(7 11 26 / 0.62);
+
+  --font-wide: 'Archivo Variable', 'Archivo', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono Variable', ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+
+  /* one motion system */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1); /* expo.out */
+  --ease-scroll: cubic-bezier(0.45, 0.05, 0.25, 1);
+  --dur: 0.6s;
+
+  /* fluid type scale — no breakpoint jumps */
+  --t-mono: clamp(0.6875rem, 0.64rem + 0.18vw, 0.8125rem);
+  --t-small: clamp(0.875rem, 0.83rem + 0.2vw, 1rem);
+  --t-body: clamp(1rem, 0.94rem + 0.3vw, 1.1875rem);
+  --t-lead: clamp(1.1875rem, 1rem + 0.8vw, 1.625rem);
+  --t-h3: clamp(1.5rem, 1.15rem + 1.5vw, 2.5rem);
+  --t-h2: clamp(2rem, 1.3rem + 3vw, 4.25rem);
+  --t-hero: clamp(2.5rem, 0.9rem + 7vw, 8.5rem);
+
+  --pad-x: clamp(1.25rem, 4vw, 4rem);
+  --col: min(40rem, 100%);
+  --radius: 4px;
+}
+
+/* phase ink — sections declare which sky they sit on */
+.phase-dawn {
+  --ink: var(--ink-dark);
+  --ink-rgb: 11 16 32;
+  --glass: rgb(221 230 238 / 0.62);
+}
+.phase-cruise,
+.phase-dusk {
+  --ink: var(--ink-light);
+  --ink-rgb: 232 237 245;
+}
+/* derived tokens must be re-declared where --ink-rgb changes (custom props resolve where defined) */
+.phase-dawn,
+.phase-cruise,
+.phase-dusk {
+  --ink-2: rgb(var(--ink-rgb) / 0.78);
+  --ink-3: rgb(var(--ink-rgb) / 0.64);
+  --hair: rgb(var(--ink-rgb) / 0.2);
+  --hair-2: rgb(var(--ink-rgb) / 0.38);
+  color: var(--ink);
+}
+.phase-dawn { --ink-3: rgb(var(--ink-rgb) / 0.76); } /* the dawn horizon is the lightest sky */
+
+*,
+*::before,
+*::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html {
+  background: var(--cruise-bot);
+  color: var(--ink-light);
+  font-family: var(--font-wide);
+  font-size: 100%;
+  -webkit-text-size-adjust: 100%;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+html.lenis, html.lenis body { height: auto; }
+.lenis.lenis-smooth { scroll-behavior: auto !important; }
+
+body {
+  min-height: 100vh;
+  font-size: var(--t-body);
+  line-height: 1.55;
+  font-stretch: 100%;
+  overflow-x: clip;
+}
+
+img, svg, canvas { display: block; max-width: 100%; }
+a { color: inherit; }
+::selection { background: var(--amber); color: var(--ink-dark); }
+
+:focus-visible {
+  outline: 2px solid var(--amber);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden;
+  clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+.skip-link {
+  position: fixed; left: 1rem; top: -4rem; z-index: 100;
+  padding: 0.6rem 0.9rem; background: var(--amber); color: var(--ink-dark);
+  font: 600 var(--t-mono) / 1 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase;
+  text-decoration: none; transition: top 0.2s var(--ease-out);
+}
+.skip-link:focus { top: 1rem; }
+
+/* ─── sky: three stacked gradients, cross-faded with opacity only ─── */
+.sky { position: fixed; inset: 0; z-index: -2; pointer-events: none; }
+.sky > i { position: absolute; inset: 0; opacity: 0; will-change: opacity; z-index: 1; }
+.sky > .sky__cruise { z-index: 0; } /* cruise is the base; dawn and dusk fade in over it */
+.sky__dawn { background: linear-gradient(180deg, var(--dawn-top), var(--dawn-bot)); }
+.sky__cruise { background: linear-gradient(180deg, var(--cruise-top), var(--cruise-bot)); opacity: 1 !important; }
+/* dusk: purple zenith, orange only at the horizon so light ink keeps ≥ 4.5:1 over the text band */
+.sky__dusk { background: linear-gradient(180deg, var(--dusk-top) 0%, var(--dusk-top) 80%, var(--dusk-bot) 100%); }
+.js .sky__dawn { opacity: 1; }
+
+#scene {
+  position: fixed; inset: 0; z-index: -1; width: 100%; height: 100%;
+  pointer-events: none; opacity: 0; transition: opacity 1.2s var(--ease-out);
+}
+#scene.is-live { opacity: 1; }
+
+/* ─── instrument layer ─── */
+.mono {
+  font-family: var(--font-mono);
+  font-size: var(--t-mono);
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+}
+.eyebrow {
+  font-family: var(--font-mono); font-size: var(--t-mono); font-weight: 500;
+  letter-spacing: 0.08em; text-transform: uppercase; font-variant-numeric: tabular-nums;
+  color: var(--ink-2); display: flex; align-items: center; gap: 0.75em;
+}
+.eyebrow::before { content: ''; width: 1.75rem; height: 1px; background: currentColor; opacity: 0.6; }
+
+.hairline { height: 1px; background: var(--hair); border: 0; }
+
+/* corner brackets instead of full borders */
+.brackets { position: relative; }
+.brackets::before,
+.brackets::after {
+  content: ''; position: absolute; width: 14px; height: 14px; pointer-events: none;
+  border: 1px solid var(--hair-2);
+  transition: width var(--dur) var(--ease-out), height var(--dur) var(--ease-out), border-color 0.3s;
+}
+.brackets::before { top: -1px; left: -1px; border-right: 0; border-bottom: 0; }
+.brackets::after { bottom: -1px; right: -1px; border-left: 0; border-top: 0; }
+.brackets:is(:hover, :focus-within)::before,
+.brackets:is(:hover, :focus-within)::after { width: 28px; height: 28px; border-color: var(--instr); }
+
+/* tick scale (used by the readout progress bar and section rules) */
+.ticks {
+  height: 8px;
+  background:
+    linear-gradient(90deg, var(--hair-2) 1px, transparent 1px) 0 100% / 10% 8px repeat-x,
+    linear-gradient(90deg, var(--hair) 1px, transparent 1px) 0 100% / 2% 4px repeat-x;
+}
+
+/* buttons */
+.btn {
+  display: inline-flex; align-items: center; gap: 0.6em;
+  min-height: 44px; padding: 0 1.1rem;
+  font: 600 var(--t-mono) / 1 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase;
+  text-decoration: none; color: var(--ink);
+  border: 1px solid var(--hair-2);
+  transition: border-color 0.3s, background 0.3s, color 0.3s, transform var(--dur) var(--ease-out);
+}
+.btn:hover { border-color: var(--instr); transform: translateY(-2px); }
+.btn--primary { background: var(--amber); border-color: var(--amber); color: var(--ink-dark); }
+.btn--primary:hover { border-color: var(--ink-light); }
+.btn svg { width: 1em; height: 1em; }
+
+/* text reveal masks (JS splits lines; without JS text is simply visible) */
+.reveal-line { display: block; overflow: clip; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

@@ -1,438 +1,257 @@
 ---
 import { getCollection } from 'astro:content';
-import Base from '../layouts/Base.astro';
-import Row from '../components/Row.astro';
-import ProjectEntry from '../components/ProjectEntry.astro';
-import { site, profileLinks } from '../data/site';
+import Strato from '../layouts/Strato.astro';
+import FlightDeck from '../components/strato/FlightDeck.astro';
+import { site, links, profileLinks } from '../data/site';
 import { experience, type Role } from '../data/experience';
-import { publications } from '../data/publications';
 import { achievements } from '../data/achievements';
 import { education } from '../data/education';
+import { publications } from '../data/publications';
 import { toolkit } from '../data/toolkit';
+import { idents, route, mapWindow } from '../data/flightplan';
+import arrowUpRight from 'lucide-static/icons/arrow-up-right.svg?raw';
+import arrowRight from 'lucide-static/icons/arrow-right.svg?raw';
 
+// waypoints fly in chronological order
 const projects = (await getCollection('projects')).sort(
-  (a, b) => a.data.order - b.data.order
+  (a, b) => a.data.date.getTime() - b.data.date.getTime()
 );
-const featured = projects.filter((p) => p.data.featured);
 
-const posts = (await getCollection('writing'))
-  .filter((p) => !p.data.draft)
-  .sort((a, b) => b.data.pubDate.getTime() - a.data.pubDate.getTime());
-
-const [city, ...regionParts] = site.location.split(',');
-const region = regionParts.join(',').trim();
+/** First paragraph under "## Result" in the case study, or null (leave the gap). */
+function resultOf(body = ''): string | null {
+  const m = body.match(/##\s*Result\s*\n+([\s\S]*?)(?=\n##\s|$)/);
+  const text = m?.[1].replace(/[*_]/g, '').replace(/\s+/g, ' ').trim();
+  return text || null;
+}
 
 function dateRange(r: Role): string {
-  if (r.current) return r.start ? `${r.start} – current` : 'current';
+  if (r.current) return r.start ? `${r.start} – now` : 'Current';
   if (r.start && r.end) return `${r.start} – ${r.end}`;
   return r.start ?? '';
 }
 
-const fmtYear = (d: Date) => d.getFullYear();
-const fmtDate = (d: Date) =>
-  d.toLocaleDateString('en-GB', { year: 'numeric', month: 'short' });
+// great-circle route, projected onto the equirectangular crop in route-region.webp
+const rad = Math.PI / 180;
+const project = (lon: number, lat: number) => [
+  ((lon - mapWindow.lonMin) / (mapWindow.lonMax - mapWindow.lonMin)) * mapWindow.width,
+  ((mapWindow.latMax - lat) / (mapWindow.latMax - mapWindow.latMin)) * mapWindow.height,
+];
+const toVec = (lon: number, lat: number) => [
+  Math.cos(lat * rad) * Math.cos(lon * rad),
+  Math.cos(lat * rad) * Math.sin(lon * rad),
+  Math.sin(lat * rad),
+];
+function arc(a: (typeof route)[number], b: (typeof route)[number], n = 48): string {
+  const A = toVec(a.lon, a.lat), B = toVec(b.lon, b.lat);
+  const d = Math.acos(Math.min(1, A[0] * B[0] + A[1] * B[1] + A[2] * B[2]));
+  const pts: string[] = [];
+  for (let i = 0; i <= n; i++) {
+    const t = i / n, s = Math.sin(d);
+    const k1 = Math.sin((1 - t) * d) / s, k2 = Math.sin(t * d) / s;
+    const v = [0, 1, 2].map((j) => k1 * A[j] + k2 * B[j]);
+    const [x, y] = project(Math.atan2(v[1], v[0]) / rad, Math.atan2(v[2], Math.hypot(v[0], v[1])) / rad);
+    pts.push(`${x.toFixed(1)} ${y.toFixed(1)}`);
+  }
+  return `M ${pts.join(' L ')}`;
+}
+const legs = route.slice(1).map((c, i) => arc(route[i], c));
+const cities = route.map((c) => ({ ...c, xy: project(c.lon, c.lat) }));
+
+const paper = publications.find((p) => p.kind === 'paper');
+const patent = publications.find((p) => p.kind === 'patent');
+const edu = education[0];
 ---
 
-<Base path="/">
-  <div class="sheet">
-    <section class="row hero" aria-labelledby="hero-name">
-      <div class="row__label hero__place">
-        <span>{city}</span>
-        <span>{region}</span>
-      </div>
-      <div class="row__body">
-        <h1 class="hero__name" id="hero-name">
-          {site.name}
-        </h1>
-        <p class="hero__lede">{site.intro[0]}</p>
-        {site.intro.slice(1).map((line) => (
-          <p class="hero__sub prose">{line}</p>
-        ))}
-        <ul class="hero__links">
-          {profileLinks.map((l) => (
-            <li>
-              <a class="ext" href={l.href} rel={l.external ? 'noopener' : undefined}>
-                {l.label}
-              </a>
-            </li>
-          ))}
-        </ul>
-      </div>
-    </section>
+<Strato path="/">
+  <!-- 1 · GATE / TAKEOFF ─────────────────────────────────────────── -->
+  <FlightDeck name={site.name} pitch={site.intro[1]} />
 
-    <Row label="Selected work" id="work">
-      {featured.map((p) => (
-        <ProjectEntry
-          href={`/projects/${p.id}`}
-          title={p.data.title}
-          year={fmtYear(p.data.date)}
-          summary={p.data.summary}
-          stack={p.data.stack}
-        />
-      ))}
-      <p class="more">
-        <a href="/projects">All projects</a>
-      </p>
-    </Row>
+  <div class="spacer" data-leg="takeoff" aria-hidden="true" style="height: 100vh"></div>
 
-    <Row label="Experience" id="experience">
-      <ol class="roles">
-        {experience.map((r) => (
-          <li class:list={['role', { 'role--current': r.current }]}>
-            <div class="role__head">
-              <span class="role__company">{r.company}</span>
-              <span class="role__title">{r.title}</span>
-            </div>
-            <p class="role__meta">
-              {dateRange(r)}
-              {dateRange(r) && ' · '}
-              {r.location}
-            </p>
-            {r.bullets.length > 0 && (
-              <ul class="role__bullets prose">
-                {r.bullets.map((b) => (
-                  <li>{b}</li>
+  <!-- 2 · CLIMB — about + toolkit ─────────────────────────────────── -->
+  <section class="leg phase-cruise" data-leg="climb" id="about" aria-labelledby="about-title">
+    <div class="leg__col">
+      <p class="eyebrow">Climb · Passing FL100</p>
+      <h2 class="leg__title" id="about-title" data-reveal>About</h2>
+      <p class="leg__lead" data-reveal>{site.tagline}</p>
+      <dl class="facts mono">
+        <div><dt>Role</dt><dd>{site.role}</dd></div>
+        <div><dt>Base</dt><dd>{site.location}</dd></div>
+        <div><dt>Education</dt><dd>{edu.degree}, {edu.school} · {edu.start}–{edu.end}{edu.note && ` · ${edu.note}`}</dd></div>
+      </dl>
+
+      <h2 class="leg__title" style="margin-top: 5rem" data-reveal>Toolkit</h2>
+      <div class="gauges">
+        {
+          toolkit.map((g) => (
+            <section class="gauge brackets" aria-label={g.label}>
+              <h3 class="mono">{g.label}</h3>
+              <ul>
+                {g.items.map((item) => (
+                  <li><span>{item}</span></li>
                 ))}
               </ul>
-            )}
-          </li>
-        ))}
-      </ol>
-    </Row>
+            </section>
+          ))
+        }
+      </div>
+    </div>
+  </section>
 
-    <Row label="Publications & patents" id="publications">
-      <ul class="pubs">
-        {publications.map((p) => (
-          <li class="pub">
-            <p class="pub__title prose">{p.title}</p>
-            {p.authors && <p class="pub__authors">{p.authors}</p>}
-            <p class="pub__meta">
-              {p.venue}, {p.year}
-              {p.href && (
-                <>
-                  {' · '}
-                  <a class="ext" href={p.href} rel="noopener">
-                    doi
-                  </a>
-                </>
+  <div class="spacer" data-leg="mach" aria-hidden="true" style="height: 45vh"></div>
+
+  <!-- 3–4 · MACH 1 + CRUISE — projects as waypoints ───────────────── -->
+  <section class="leg phase-cruise" data-leg="cruise" id="waypoints" aria-labelledby="wpt-title">
+    <div class="leg__col">
+      <p class="eyebrow">Cruise · FL600</p>
+      <h2 class="leg__title" id="wpt-title" data-reveal>Projects</h2>
+    </div>
+    {
+      projects.map((p) => {
+        const ident = idents[p.id] ?? p.id.slice(0, 5).toUpperCase();
+        const result = resultOf(p.body);
+        return (
+          <article class="wpt" data-wpt={ident} id={`wpt-${p.id}`} aria-labelledby={`t-${p.id}`}>
+            <div class="panel brackets">
+              <p class="panel__hdr mono">
+                <b data-tick>{ident}</b>
+                <span>{p.data.date.getFullYear()}</span>
+                <span>{p.data.stack.slice(0, 2).join(' · ')}</span>
+              </p>
+              <h3 id={`t-${p.id}`}>{p.data.title}</h3>
+              <p>{p.data.summary}</p>
+              {result && (
+                <div class="panel__result">
+                  <span class="mono">Result</span>
+                  {result}
+                </div>
               )}
-            </p>
-            {!p.href && p.ref && <p class="pub__ref">{p.ref}</p>}
-          </li>
-        ))}
-      </ul>
-    </Row>
-
-    <Row label="Achievements" id="achievements">
-      <ul class="awards">
-        {achievements.map((a) => (
-          <li class="award">
-            <span class="award__year">{a.year ?? ''}</span>
-            <span class="award__body">
-              <span class="award__title">{a.title}</span>
-              {a.detail && <span class="award__detail">{a.detail}</span>}
-            </span>
-          </li>
-        ))}
-      </ul>
-    </Row>
-
-    {posts.length > 0 && (
-      <Row label="Writing" id="writing">
-        <ul class="notes">
-          {posts.slice(0, 3).map((post) => (
-            <li class="note">
-              <a class="note__title" href={`/writing/${post.id}`}>
-                {post.data.title}
+              <ul class="tags mono" aria-label="Stack">
+                {p.data.stack.map((s) => (
+                  <li>{s}</li>
+                ))}
+              </ul>
+              <a class="panel__link mono" href={`/projects/${p.id}`}>
+                Open case study <Fragment set:html={arrowRight} />
               </a>
-              <span class="note__date">{fmtDate(post.data.pubDate)}</span>
-              <p class="note__desc prose">{post.data.description}</p>
+            </div>
+          </article>
+        );
+      })
+    }
+  </section>
+
+  <!-- 5 · FLIGHT LOG — experience + route ──────────────────────────── -->
+  <section class="leg phase-cruise" data-leg="descent" id="log" aria-labelledby="log-title">
+    <div class="leg__col">
+      <p class="eyebrow">Flight log</p>
+      <h2 class="leg__title" id="log-title" data-reveal>Experience</h2>
+      <ol class="logbook" role="list">
+        {
+          experience.map((r) => (
+            <li class="entry">
+              <p class="entry__when mono">{dateRange(r)}</p>
+              <div>
+                <h3>
+                  {r.title}, {r.company}
+                  <small>{r.location}</small>
+                </h3>
+                {r.bullets.length > 0 && (
+                  <ul>
+                    {r.bullets.map((b) => (
+                      <li>{b}</li>
+                    ))}
+                  </ul>
+                )}
+              </div>
             </li>
-          ))}
-        </ul>
-      </Row>
-    )}
+          ))
+        }
+      </ol>
+    </div>
+    <figure class="routemap" data-reveal-fig>
+      <img src="/textures/route-region.webp" width="1600" height="700" alt="" loading="lazy" decoding="async" />
+      <svg viewBox="0 0 1600 700" role="img" aria-label={`Route: ${route.map((c) => c.name).join(' to ')}`}>
+        {legs.map((d) => <path class="route-arc" d={d} />)}
+        {
+          cities.map((c) => (
+            <g class="route-city" transform={`translate(${c.xy[0].toFixed(1)} ${c.xy[1].toFixed(1)})`}>
+              <circle r="6" />
+              <text x="12" y="-10">{c.code} · {c.name.toUpperCase()}</text>
+            </g>
+          ))
+        }
+      </svg>
+      <figcaption class="mono">Great-circle route · places in the log, in order</figcaption>
+    </figure>
+  </section>
 
-    <Row label="Education" id="education">
-      {education.map((e) => (
-        <div class="edu">
-          <p class="edu__school">{e.school}</p>
-          <p class="edu__degree prose">{e.degree}</p>
-          <p class="edu__meta">
-            {e.start}–{e.end} · {e.location}
-            {e.note && ` · ${e.note}`}
-          </p>
+  <!-- 6 · CLEARANCES — honours + publications ─────────────────────── -->
+  <section class="leg phase-cruise" data-leg="descent" id="clearances" aria-labelledby="clr-title">
+    <div class="leg__col">
+      <p class="eyebrow">Clearances</p>
+      <h2 class="leg__title" id="clr-title" data-reveal>Honours &amp; publications</h2>
+    </div>
+    <ul class="stamps" style="width: min(64rem, 100%)">
+      {
+        achievements.map((a) => (
+          <li class="stamp">
+            {a.year && <span class="stamp__when mono">{a.year}</span>}
+            <b>{a.title}</b>
+            {a.detail && <small>{a.detail}</small>}
+          </li>
+        ))
+      }
+    </ul>
+    <div class="slips leg__col">
+      {
+        paper && (
+          <article class="slip brackets">
+            <span class="mono" style="color: var(--instr)">Paper · {paper.year}</span>
+            <b>{paper.title}</b>
+            <p>{paper.authors} — {paper.venue}</p>
+            {paper.href && <p class="mono"><a href={paper.href} rel="noopener">{paper.ref}</a></p>}
+          </article>
+        )
+      }
+      {
+        patent && (
+          <article class="slip brackets">
+            <span class="mono" style="color: var(--instr)">Patent · {patent.year}</span>
+            <b>{patent.title}</b>
+            <p>{patent.venue}{patent.ref && ` — ${patent.ref}`}</p>
+          </article>
+        )
+      }
+    </div>
+  </section>
+
+  <!-- 7 · LANDING — contact + résumé ───────────────────────────────── -->
+  <section class="leg land phase-dusk" data-leg="landing" id="contact" aria-labelledby="land-title">
+    <div class="leg__col">
+      <p class="eyebrow">Approach · Landing</p>
+      <h2 class="leg__title" id="land-title" data-reveal>Contact</h2>
+      <p class="leg__lead" data-reveal>{site.intro[0]} Based in {site.location}.</p>
+      <div class="contact">
+        {
+          profileLinks.filter((l) => l !== links.resume).map((l) => (
+            <a class="btn" href={l.href} rel={l.external ? 'noopener' : undefined}>
+              {l.label} <Fragment set:html={arrowUpRight} />
+            </a>
+          ))
+        }
+      </div>
+      <a class="pass" href={links.resume.href} aria-label="Open the résumé (PDF)">
+        <div class="pass__main">
+          <div><span class="mono">Passenger</span><strong>{site.name.toUpperCase().split(' ').reverse().join(' / ')}</strong></div>
+          <div><span class="mono">Role</span><strong>{site.role}</strong></div>
+          <div><span class="mono">Base</span><strong>{site.location}</strong></div>
+          <div><span class="mono">Document</span><strong>Résumé · PDF</strong></div>
         </div>
-      ))}
-    </Row>
-
-    <Row label="Toolkit" id="toolkit">
-      <dl class="kit">
-        {toolkit.map((g) => (
-          <div class="kit__group">
-            <dt>{g.label}</dt>
-            <dd>{g.items.join(' · ')}</dd>
-          </div>
-        ))}
-      </dl>
-    </Row>
-  </div>
-</Base>
-
-<style>
-  /* ---------- hero ---------- */
-  .hero__place {
-    display: flex;
-    flex-direction: column;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-  }
-  .hero__name {
-    font-family: var(--font-mono);
-    font-size: var(--t-xs);
-    font-weight: 400;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--ink-2);
-  }
-  .hero__lede {
-    margin-top: var(--space-4);
-    font-size: var(--t-display);
-    line-height: var(--leading-tight);
-    letter-spacing: -0.015em;
-    max-width: 16ch;
-  }
-  .hero__sub {
-    margin-top: var(--space-4);
-    font-size: var(--t-md);
-    line-height: var(--leading-snug);
-    color: var(--ink);
-  }
-  .hero__links {
-    margin-top: var(--space-5);
-    list-style: none;
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-2) var(--space-5);
-    font-size: var(--t-sm);
-  }
-
-  /* ---------- experience ---------- */
-  .roles {
-    list-style: none;
-  }
-  .role {
-    position: relative;
-    padding-block: var(--space-5);
-  }
-  .role:first-child {
-    padding-top: 0;
-  }
-  .role + .role {
-    border-top: var(--rule-w) solid var(--rule);
-  }
-  .role::before {
-    content: '';
-    position: absolute;
-    left: calc(-1 * var(--body-pad) - 3.5px);
-    top: 0.55rem;
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    background: var(--rule-strong);
-  }
-  .role:first-child::before {
-    top: 0.3rem;
-  }
-  .role--current::before {
-    background: var(--signal);
-  }
-  .role__head {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: var(--space-2) var(--space-3);
-  }
-  .role__company {
-    font-family: var(--font-serif);
-    font-size: var(--t-md);
-  }
-  .role__title {
-    font-family: var(--font-mono);
-    font-size: var(--t-xs);
-    color: var(--ink-2);
-  }
-  .role__meta {
-    margin-top: var(--space-1);
-    font-family: var(--font-mono);
-    font-size: var(--t-2xs);
-    color: var(--ink-2);
-  }
-  .role__bullets {
-    margin-top: var(--space-3);
-    padding-left: var(--space-4);
-    display: grid;
-    gap: var(--space-2);
-  }
-  .role__bullets li {
-    padding-left: var(--space-2);
-  }
-  .role__bullets li::marker {
-    content: '\2013  ';
-    color: var(--rule-strong);
-  }
-
-  @media (max-width: 56.99rem) {
-    .role::before {
-      display: none;
-    }
-  }
-
-  /* ---------- publications ---------- */
-  .pubs,
-  .awards,
-  .notes {
-    list-style: none;
-  }
-  .pub {
-    padding-block: var(--space-4);
-  }
-  .pub:first-child {
-    padding-top: 0;
-  }
-  .pub + .pub {
-    border-top: var(--rule-w) solid var(--rule);
-  }
-  .pub__title {
-    font-size: var(--t-md);
-    line-height: var(--leading-snug);
-  }
-  .pub__authors {
-    margin-top: var(--space-1);
-    font-family: var(--font-mono);
-    font-size: var(--t-2xs);
-    color: var(--ink-2);
-  }
-  .pub__meta {
-    margin-top: var(--space-2);
-    font-family: var(--font-mono);
-    font-size: var(--t-xs);
-    color: var(--ink-2);
-  }
-  .pub__ref {
-    margin-top: var(--space-1);
-    font-family: var(--font-mono);
-    font-size: var(--t-2xs);
-    color: var(--ink-2);
-  }
-
-  /* ---------- achievements ---------- */
-  .award {
-    display: grid;
-    grid-template-columns: 4.5rem 1fr;
-    gap: var(--space-3);
-    padding-block: var(--space-3);
-  }
-  .award:first-child {
-    padding-top: 0;
-  }
-  .award + .award {
-    border-top: var(--rule-w) solid var(--rule);
-  }
-  .award__year {
-    font-family: var(--font-mono);
-    font-size: var(--t-2xs);
-    color: var(--ink-2);
-    padding-top: 0.35em;
-  }
-  .award__body {
-    display: flex;
-    flex-direction: column;
-    gap: 0.1rem;
-  }
-  .award__title {
-    font-size: var(--t-sm);
-  }
-  .award__detail {
-    font-family: var(--font-mono);
-    font-size: var(--t-2xs);
-    color: var(--ink-2);
-  }
-
-  /* ---------- writing ---------- */
-  .note {
-    padding-block: var(--space-4);
-  }
-  .note:first-child {
-    padding-top: 0;
-  }
-  .note + .note {
-    border-top: var(--rule-w) solid var(--rule);
-  }
-  .note__title {
-    font-family: var(--font-serif);
-    font-size: var(--t-md);
-    text-decoration: none;
-  }
-  .note__title:hover {
-    text-decoration: underline;
-    text-decoration-color: var(--signal);
-  }
-  .note__date {
-    margin-left: var(--space-3);
-    font-family: var(--font-mono);
-    font-size: var(--t-2xs);
-    color: var(--ink-2);
-  }
-  .note__desc {
-    margin-top: var(--space-2);
-    color: var(--ink-2);
-  }
-
-  /* ---------- education ---------- */
-  .edu__school {
-    font-family: var(--font-serif);
-    font-size: var(--t-md);
-  }
-  .edu__degree {
-    margin-top: var(--space-1);
-  }
-  .edu__meta {
-    margin-top: var(--space-2);
-    font-family: var(--font-mono);
-    font-size: var(--t-2xs);
-    color: var(--ink-2);
-  }
-
-  /* ---------- toolkit ---------- */
-  .kit {
-    display: grid;
-    gap: var(--space-4);
-  }
-  .kit__group {
-    display: grid;
-    grid-template-columns: 7rem 1fr;
-    gap: var(--space-3);
-  }
-  .kit dt {
-    font-family: var(--font-mono);
-    font-size: var(--t-2xs);
-    color: var(--ink-2);
-    padding-top: 0.15em;
-  }
-  .kit dd {
-    font-family: var(--font-mono);
-    font-size: var(--t-xs);
-    line-height: var(--leading-snug);
-  }
-
-  @media (max-width: 40rem) {
-    .kit__group {
-      grid-template-columns: 1fr;
-      gap: var(--space-1);
-    }
-    .award {
-      grid-template-columns: 3.5rem 1fr;
-    }
-  }
-</style>
+        <div class="pass__stub" aria-hidden="true"></div>
+        <span class="pass__cta mono">Open boarding pass ↗</span>
+      </a>
+    </div>
+    <div class="runway" aria-hidden="true"></div>
+  </section>
+</Strato>

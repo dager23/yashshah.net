@@ -1,80 +1,42 @@
 ---
 import { getCollection } from 'astro:content';
-import Base from '../../layouts/Base.astro';
+import Strato from '../../layouts/Strato.astro';
 
 const posts = (await getCollection('writing'))
   .filter((p) => !p.data.draft)
   .sort((a, b) => b.data.pubDate.getTime() - a.data.pubDate.getTime());
-
-const fmtDate = (d: Date) =>
-  d.toLocaleDateString('en-GB', { year: 'numeric', month: 'short', day: 'numeric' });
+const fmt = (d: Date) => d.toLocaleDateString('en-GB', { year: 'numeric', month: 'short', day: 'numeric' });
 ---
 
-<Base
+<Strato
   path="/writing"
   title="Writing"
   description="Notes on machine-learning systems, computer vision, and the engineering around them."
+  parked="NOTES"
 >
-  <div class="sheet">
-    <section class="row" aria-labelledby="w-label">
-      <h1 class="row__label" id="w-label">
-        Writing
-      </h1>
-      <div class="row__body">
-        {posts.length === 0 ? (
-          <p class="empty prose">Nothing published yet.</p>
+  <section class="leg phase-cruise" aria-labelledby="w-title" style="padding-top: 9rem; min-height: 80svh">
+    <div class="leg__col">
+      <p class="eyebrow">Flight notes</p>
+      <h1 class="leg__title" id="w-title">Writing</h1>
+      {
+        posts.length === 0 ? (
+          <p class="leg__lead">Nothing published yet.</p>
         ) : (
-          <ul class="notes">
+          <ol class="logbook" role="list">
             {posts.map((post) => (
-              <li class="note">
-                <a class="note__title" href={`/writing/${post.id}`}>
-                  {post.data.title}
-                </a>
-                <span class="note__date">{fmtDate(post.data.pubDate)}</span>
-                <p class="note__desc prose">{post.data.description}</p>
+              <li class="entry">
+                <p class="entry__when mono">{fmt(post.data.pubDate)}</p>
+                <div>
+                  <h2 style="font-size: var(--t-lead); font-weight: 600; font-stretch: 112%">
+                    <a href={`/writing/${post.id}`}>{post.data.title}</a>
+                  </h2>
+                  <p style="margin-top: .5rem; color: var(--ink-2)">{post.data.description}</p>
+                </div>
               </li>
             ))}
-          </ul>
-        )}
-      </div>
-    </section>
-  </div>
-</Base>
-
-<style>
-  .empty {
-    color: var(--ink-2);
-    font-size: var(--t-md);
-  }
-  .notes {
-    list-style: none;
-  }
-  .note {
-    padding-block: var(--space-5);
-  }
-  .note:first-child {
-    padding-top: 0;
-  }
-  .note + .note {
-    border-top: var(--rule-w) solid var(--rule);
-  }
-  .note__title {
-    font-family: var(--font-serif);
-    font-size: var(--t-lg);
-    text-decoration: none;
-  }
-  .note__title:hover {
-    text-decoration: underline;
-    text-decoration-color: var(--signal);
-  }
-  .note__date {
-    margin-left: var(--space-3);
-    font-family: var(--font-mono);
-    font-size: var(--t-2xs);
-    color: var(--ink-2);
-  }
-  .note__desc {
-    margin-top: var(--space-2);
-    color: var(--ink-2);
-  }
-</style>
+          </ol>
+        )
+      }
+    </div>
+  </section>
+</Strato>

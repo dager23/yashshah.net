@@ -1,0 +1,246 @@
+/* ─── Stratosphere — sections ───────────────────────────────────────────── */
+
+/* header: always on dark glass so it reads over every sky */
+.hdr {
+  position: fixed; inset: 0 0 auto; z-index: 40;
+  display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+  padding: 0.85rem var(--pad-x);
+  color: var(--ink-light);
+  background: rgb(7 11 26 / 0.8); /* dense enough for ≥ 4.5:1 over the pale dawn sky */
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  backdrop-filter: blur(14px) saturate(140%);
+  border-bottom: 1px solid rgb(232 237 245 / 0.12);
+}
+.hdr__id { text-decoration: none; display: flex; gap: 0.75em; align-items: center; }
+.hdr__id b { color: var(--amber); font-weight: 600; }
+.hdr nav { display: flex; gap: clamp(0.75rem, 2vw, 1.75rem); }
+.hdr nav a { text-decoration: none; color: rgb(232 237 245 / 0.86); transition: color 0.25s; }
+.hdr nav a:hover, .hdr nav a[aria-current] { color: var(--ink-light); }
+
+/* ─── readout (fixed instrument, doubles as progress) ─── */
+.readout {
+  position: fixed; right: var(--pad-x); bottom: 1.5rem; z-index: 30;
+  width: 15.5rem; padding: 0.9rem 1rem 0.8rem;
+  color: var(--ink-light);
+  background: rgb(7 11 26 / 0.82);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgb(232 237 245 / 0.12);
+}
+.readout dl { display: grid; grid-template-columns: auto 1fr; gap: 0.35rem 1rem; align-items: baseline; }
+.readout dt { color: rgb(232 237 245 / 0.74); }
+.readout dd { text-align: right; color: var(--instr); }
+.readout dd.is-amber { color: var(--amber); }
+/* stowed while the flight deck is on screen — its autopilot panel shows the same values */
+.readout { transition: opacity 0.4s var(--ease-out), translate 0.4s var(--ease-out); }
+.readout.is-stowed { opacity: 0; translate: 0 0.75rem; }
+html:not(.js) .readout { display: none; } /* it only moves with JS */
+
+/* instruments share the flight deck's hardware: display-unit bezel + HUD glow */
+:root { --bezel: 0 0 0 0.4rem var(--ink-dark), 0 0 0 calc(0.4rem + 1px) rgb(232 237 245 / 0.12); }
+.panel, .routemap { box-shadow: var(--bezel); }
+.panel__hdr b, .readout dd:not(.is-amber) { text-shadow: 0 0 0.6em rgb(127 211 255 / 0.45); }
+@media (min-width: 768px) { .readout { box-shadow: var(--bezel); } }
+.readout__bar { position: relative; margin-top: 0.75rem; }
+.readout__fill {
+  position: absolute; left: 0; bottom: 0; height: 2px; width: 100%;
+  background: var(--amber); transform: scaleX(var(--p, 0)); transform-origin: left;
+}
+.odo { display: inline-block; height: 1.2em; line-height: 1.2em; overflow: hidden; vertical-align: bottom; }
+.odo__strip { display: flex; flex-direction: column; transition: transform 0.45s var(--ease-out); will-change: transform; }
+.odo__strip > span { height: 1.2em; }
+
+/* ─── legs (sections) ─── */
+main { position: relative; z-index: 1; }
+/* x-clip: panels slide in from 3rem right before docking; they must not widen the page on phones */
+.leg { position: relative; padding: clamp(6rem, 18vh, 12rem) var(--pad-x); overflow-x: clip; }
+.leg__col { width: var(--col); color: var(--ink); }
+.leg__title {
+  margin-top: 1rem;
+  font-size: var(--t-h2); font-weight: 600; font-stretch: 125%;
+  line-height: 0.98; letter-spacing: -0.01em; text-wrap: balance;
+}
+.leg__lead { margin-top: 1.5rem; font-size: var(--t-lead); line-height: 1.4; color: var(--ink-2); max-width: 34ch; }
+.spacer { height: 80vh; }
+
+/* ─── gate / hero: the flight deck at dawn ─── */
+/* One stage holds the cockpit drawing (wide 1440×900, or tall 390×844 on portrait phones),
+   scaled to cover the viewport and anchored to the panel; --u is one drawing unit in px.
+   The clip runs a viewport below the gate so the push-through (flight.ts) can hold the
+   stage still while the page scrolls. */
+/* no background of its own: the stage is opaque, and once it fades the dawn sky must show */
+.deck { height: 100svh; min-height: 30rem; padding: 0; container-type: size; }
+.deck__clip { position: absolute; inset: 0 0 -100%; overflow: hidden; pointer-events: none; }
+.deck__stage {
+  --W: 1440; --H: 900; --fpm-y: 36.667%;
+  --name-y: 366; --name-fs: 100;
+  --scr-x: 492; --scr-y: 652; --scr-w: 456; --scr-h: 200; --scr-pad: 34; --pitch-fs: 25;
+  --sw: max(100cqw, 100cqh * var(--W) / var(--H));
+  --sh: max(100cqh, 100cqw * var(--H) / var(--W));
+  --u: calc(var(--sw) / var(--W));
+  position: absolute; left: calc(50cqw - var(--sw) / 2); top: calc(100cqh - var(--sh));
+  width: var(--sw); height: var(--sh);
+}
+.deck__art, .deck__hud, .deck__art svg, .deck__sym { position: absolute; inset: 0; width: 100%; height: 100%; max-width: none; }
+.deck__art--tall, .deck__sym--tall { display: none; }
+.deck__view, .deck__frame { transform-origin: 50% var(--fpm-y); }
+.js .deck__view, .js .deck__frame { will-change: transform; }
+.deck__frame text { font-family: var(--font-mono); letter-spacing: 0.08em; }
+.deck__sym { overflow: visible; filter: drop-shadow(0 0 5px rgb(127 211 255 / 0.55)); }
+.deck__name {
+  position: absolute; left: 0; right: 0; top: calc(var(--u) * var(--name-y));
+  font-size: calc(var(--u) * var(--name-fs)); font-weight: 600; font-stretch: 125%;
+  line-height: 1.02; letter-spacing: 0.02em; text-align: center; text-transform: uppercase;
+  color: var(--instr);
+  text-shadow: 0 0 0.14em rgb(127 211 255 / 0.55), 0 0 0.02em rgb(127 211 255 / 0.9);
+  pointer-events: auto;
+}
+/* HUD power-on flicker; never starts from 0 so the name still paints first (LCP) */
+.js .deck__name { animation: hud-on 1.4s var(--ease-out) both; }
+@keyframes hud-on { 0% { opacity: 0.3; } 25% { opacity: 1; } 32% { opacity: 0.45; } 100% { opacity: 1; } }
+.deck__screen {
+  position: absolute; left: calc(var(--u) * var(--scr-x)); top: calc(var(--u) * var(--scr-y));
+  width: calc(var(--u) * var(--scr-w)); height: calc(var(--u) * var(--scr-h));
+  padding: 0 calc(var(--u) * var(--scr-pad));
+  display: grid; align-content: center; pointer-events: auto;
+}
+.deck__pitch { font-size: calc(var(--u) * var(--pitch-fs)); line-height: 1.4; color: var(--ink-light); text-wrap: pretty; }
+@media (max-aspect-ratio: 7/10) {
+  .deck__stage { --W: 390; --H: 844; --fpm-y: 31.04%; --name-y: 290; --name-fs: 62; --scr-x: 30; --scr-y: 530; --scr-w: 330; --scr-h: 184; --scr-pad: 22; --pitch-fs: 19; }
+  .deck__art--wide, .deck__sym--wide { display: none; }
+  .deck__art--tall, .deck__sym--tall { display: block; }
+  .deck__name span { display: block; }
+}
+
+/* landing runway — the scene's curve ends on this line */
+.runway {
+  --rw: var(--ink-dark);
+  position: absolute; left: 0; right: 0; bottom: 7vh; height: 10px;
+  background:
+    radial-gradient(circle, var(--rw) 0 1.6px, transparent 2.2px) 0 0 / 26px 10px repeat-x,
+    linear-gradient(var(--rw), var(--rw)) 0 50% / 100% 1px no-repeat;
+  opacity: 0.55;
+}
+.phase-dusk .runway { --rw: var(--amber); opacity: 0.8; }
+
+/* ─── climb: about + toolkit ─── */
+.facts { margin-top: 2.5rem; display: grid; gap: 0; border-top: 1px solid var(--hair); }
+.facts div { display: grid; grid-template-columns: 9rem 1fr; gap: 1rem; padding: 0.9rem 0; border-bottom: 1px solid var(--hair); }
+.facts dt { color: var(--ink-3); }
+.gauges { margin-top: 3rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); gap: 1.25rem; }
+.gauge { padding: 1.1rem 1.2rem 1.2rem; background: var(--glass); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+.gauge h3 { color: var(--instr); }
+.gauge ul { list-style: none; margin-top: 0.9rem; display: grid; gap: 0.45rem; }
+.gauge li { display: flex; justify-content: space-between; gap: 1rem; font-size: var(--t-small); border-bottom: 1px dashed var(--hair); padding-bottom: 0.4rem; }
+
+/* ─── cruise: waypoints ─── */
+.wpt { min-height: 92vh; display: grid; align-content: center; }
+.panel {
+  width: min(38rem, 100%); padding: clamp(1.25rem, 2.5vw, 2rem);
+  color: var(--ink-light);
+  background: rgb(7 11 26 / 0.6);
+  -webkit-backdrop-filter: blur(16px) saturate(130%);
+  backdrop-filter: blur(16px) saturate(130%);
+  transition: transform 0.9s var(--ease-out), opacity 0.9s var(--ease-out);
+}
+.js .panel:not(.is-docked) { transform: translateX(3rem); opacity: 0; }
+.panel__hdr { display: flex; flex-wrap: wrap; gap: 0.4rem 1rem; color: rgb(232 237 245 / 0.7); padding-bottom: 0.9rem; border-bottom: 1px solid rgb(232 237 245 / 0.16); }
+.panel__hdr b { color: var(--instr); font-weight: 600; }
+.panel h3 { margin-top: 1.2rem; font-size: var(--t-h3); font-weight: 600; font-stretch: 125%; line-height: 1.05; }
+.panel p { margin-top: 0.75rem; color: rgb(232 237 245 / 0.82); }
+.panel__result { margin-top: 1.25rem; padding: 0.9rem 1rem; border-left: 2px solid var(--amber); background: rgb(255 122 47 / 0.07); }
+.panel__result span { display: block; color: var(--amber); margin-bottom: 0.35rem; }
+.tags { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 1.1rem; list-style: none; }
+.tags li { padding: 0.35rem 0.6rem; border: 1px solid rgb(232 237 245 / 0.2); color: rgb(232 237 245 / 0.78); }
+.panel__link { display: inline-flex; gap: 0.5em; margin-top: 1.4rem; color: var(--instr); text-decoration: none; }
+.panel__link:hover { text-decoration: underline; text-underline-offset: 0.3em; }
+
+/* ─── flight log ─── */
+.logbook { margin-top: 2.5rem; border-top: 1px solid var(--hair); }
+.entry { display: grid; grid-template-columns: 8.5rem 1fr; gap: 0.5rem 1.5rem; padding: 1.4rem 0; border-bottom: 1px solid var(--hair); }
+.entry__when { color: var(--ink-3); }
+.entry h3 { font-size: var(--t-lead); font-weight: 600; font-stretch: 112%; line-height: 1.2; }
+.entry h3 small { display: block; margin-top: 0.3rem; color: var(--ink-2); font: 500 var(--t-mono) / 1.4 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; }
+.entry ul { margin-top: 0.75rem; padding-left: 1.1rem; display: grid; gap: 0.4rem; color: var(--ink-2); font-size: var(--t-small); }
+.routemap { position: relative; margin-top: 3rem; width: min(64rem, 100%); aspect-ratio: 1600 / 700; border: 1px solid var(--hair); overflow: hidden; }
+.routemap img, .routemap svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.routemap figcaption { position: absolute; left: 0.75rem; bottom: 0.6rem; color: rgb(232 237 245 / 0.72); }
+.route-arc { fill: none; stroke: var(--instr); stroke-width: 1.6; stroke-dasharray: 7 6; vector-effect: non-scaling-stroke; }
+.route-city circle { fill: var(--amber); }
+.route-city text { fill: var(--ink-light); font: 500 22px var(--font-mono); letter-spacing: 0.08em; }
+
+/* ─── clearances ─── */
+.stamps { margin-top: 2.5rem; display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: 1.25rem; list-style: none; }
+.stamp { padding: 1rem 1.1rem; border: 1.5px solid var(--instr); color: var(--ink); rotate: -0.8deg; }
+.stamp:nth-child(even) { rotate: 0.9deg; }
+.stamp__when { color: var(--instr); }
+.stamp b { display: block; margin-top: 0.4rem; font-size: var(--t-small); font-weight: 600; font-stretch: 110%; line-height: 1.3; }
+.stamp small { display: block; margin-top: 0.3rem; color: var(--ink-2); font-size: 0.85em; }
+.slips { margin-top: 2rem; display: grid; gap: 1rem; }
+.slip { padding: 1.2rem 1.3rem; border: 1px solid var(--hair-2); background: var(--glass); }
+.slip b { display: block; margin-top: 0.5rem; font-weight: 600; line-height: 1.35; }
+.slip p { margin-top: 0.4rem; color: var(--ink-2); font-size: var(--t-small); }
+.slip a { color: var(--instr); }
+
+/* ─── landing ─── */
+/* text stays above the orange horizon band (bottom ~18%); only the runway sits in it */
+.land { min-height: 100svh; display: grid; align-content: center; padding-bottom: max(20vh, 8rem); }
+.pass {
+  position: relative; display: grid; grid-template-columns: 1fr auto; margin-top: 2.5rem;
+  width: min(40rem, 100%); color: var(--ink-dark); background: var(--ink-light);
+  text-decoration: none; border-radius: var(--radius);
+  transition: transform var(--dur) var(--ease-out);
+}
+.pass:hover { transform: translateY(-4px) rotate(-0.4deg); }
+.pass__main { padding: 1.3rem 1.4rem; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.9rem 1.2rem; }
+.pass__main .mono { color: rgb(11 16 32 / 0.66); }
+.pass__main strong { display: block; margin-top: 0.2rem; font-size: var(--t-small); font-weight: 600; font-stretch: 112%; }
+.pass__stub { width: 5.5rem; border-left: 2px dashed rgb(11 16 32 / 0.3); background: repeating-linear-gradient(90deg, var(--ink-dark) 0 2px, transparent 2px 4px, var(--ink-dark) 4px 5px, transparent 5px 8px) 50% 50% / 60% 70% no-repeat; }
+.pass__cta { grid-column: 1 / -1; padding: 0.8rem 1.4rem; background: var(--amber); color: var(--ink-dark); border-radius: 0 0 var(--radius) var(--radius); }
+.contact { margin-top: 2.5rem; display: flex; flex-wrap: wrap; gap: 0.75rem; }
+
+/* ─── 2D fallback plane (no WebGL) ─── */
+.fallback-plane {
+  position: fixed; left: 0; top: 0; z-index: -1; width: 52px; height: 40px; margin: -20px 0 0 -26px;
+  color: var(--instr); pointer-events: none; will-change: transform;
+  filter: drop-shadow(0 0 6px rgb(127 211 255 / 0.6));
+}
+.fallback-plane svg { width: 100%; height: 100%; }
+
+/* ─── case studies ─── */
+.case { padding-top: 7.5rem; }
+.case__back { display: inline-flex; align-items: center; gap: 0.5em; color: var(--ink-2); text-decoration: none; }
+.case__back:hover { color: var(--instr); }
+.case__back svg { width: 1.1em; height: 1.1em; }
+.case__meta { margin-top: 2.5rem; }
+.case__meta .tags { margin-top: 0.9rem; }
+.case__links { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1.25rem; }
+.case__body { margin-top: 3.5rem; max-width: 68ch; }
+.case__body > * + * { margin-top: 1rem; }
+.case__body h2 {
+  margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--hair);
+  font: 600 var(--t-mono) / 1.4 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--instr);
+}
+.case__body p { color: var(--ink-2); font-size: var(--t-body); }
+.case__body em { font-style: italic; }
+.case-list { margin-top: 3rem; display: grid; gap: 1.25rem; width: min(52rem, 100%); }
+.case-list__item { text-decoration: none; display: block; width: 100%; }
+.case-list__item h2 { margin-top: 1.1rem; font-size: var(--t-h3); font-weight: 600; font-stretch: 125%; line-height: 1.05; }
+.case-list__item p { margin-top: 0.6rem; color: rgb(232 237 245 / 0.82); }
+
+.foot { padding: 2.5rem var(--pad-x) 3rem; color: rgb(232 237 245 / 0.7); border-top: 1px solid rgb(232 237 245 / 0.12); background: rgb(7 11 26 / 0.65); display: flex; flex-wrap: wrap; gap: 0.75rem 2rem; justify-content: space-between; }
+.foot a { color: inherit; }
+
+/* ─── narrow screens: readout becomes a slim bar, path runs down one side ─── */
+@media (max-width: 767px) {
+  .hdr nav a:not(.keep) { display: none; }
+  .readout {
+    inset: 3.35rem 0 auto; width: auto; padding: 0.45rem var(--pad-x);
+    border-width: 0 0 1px;
+  }
+  .readout dl { grid-template-columns: repeat(3, auto 1fr); gap: 0 0.5rem; }
+  .readout__bar { position: absolute; left: 0; right: 0; bottom: -1px; margin: 0; height: 2px; }
+  .readout__bar .ticks { display: none; }
+  .leg__col { width: min(100%, calc(100% - 2.5rem)); }
+  .facts div, .entry { grid-template-columns: 1fr; }
+}
