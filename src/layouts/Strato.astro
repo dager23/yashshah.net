@@ -1,0 +1,89 @@
+---
+import '../styles/strato-base.css';
+import '../styles/strato-sections.css';
+import { ClientRouter } from 'astro:transitions';
+import Meta from '../components/Meta.astro';
+import { site, links } from '../data/site';
+
+interface Props {
+  title?: string;
+  description?: string;
+  path?: string;
+  /** on a case study: the waypoint ident the plane parks at */
+  parked?: string;
+}
+
+const { title, description = site.tagline, path = Astro.url.pathname, parked } = Astro.props;
+const pageTitle = title ? `${title} — ${site.name}` : `${site.name} — ${site.role}`;
+const canonical = new URL(path, Astro.site ?? 'https://yashshah.net').href.replace(/(.)\/$/, '$1');
+const year = new Date().getFullYear();
+
+/** Flip to true once the Sketchfab model is in public/models/ (see CREDITS.md). */
+const modelLive = false;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script is:inline data-astro-rerun>
+      document.documentElement.classList.add('js');
+    </script>
+    <Meta title={pageTitle} description={description} canonical={canonical} />
+    <link rel="preload" as="font" type="font/woff2" href="/fonts/archivo-latin-wdth-normal.woff2" crossorigin />
+    <link rel="preload" as="font" type="font/woff2" href="/fonts/jetbrains-mono-latin-wght-normal.woff2" crossorigin />
+    <ClientRouter />
+  </head>
+  <body data-parked={parked}>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <div class="sky" aria-hidden="true" transition:persist="sky">
+      <i class="sky__dawn"></i><i class="sky__cruise"></i><i class="sky__dusk"></i>
+    </div>
+    <canvas id="scene" aria-hidden="true" transition:persist="scene"></canvas>
+
+    <header class="hdr mono">
+      <a class="hdr__id" href="/"><b>YS</b>{site.name}</a>
+      <nav aria-label="Primary">
+        <a href="/#waypoints">Projects</a>
+        <a href="/#log">Experience</a>
+        <a href="/#clearances">Honours</a>
+        <a class="keep" href={links.resume.href}>Résumé</a>
+      </nav>
+    </header>
+
+    <aside class="readout brackets mono" id="readout" aria-hidden="true" transition:persist="readout">
+      <dl>
+        <dt>Mach</dt><dd data-r="mach">0.00</dd>
+        <dt>Alt</dt><dd data-r="alt">0 FT</dd>
+        <dt>Wpt</dt><dd data-r="wpt" class="is-amber">{parked ?? 'GATE'}</dd>
+      </dl>
+      <div class="readout__bar"><div class="ticks"></div><i class="readout__fill"></i></div>
+    </aside>
+
+    <main id="main"><slot /></main>
+
+    <footer class="foot mono">
+      <span>© {year} {site.name}</span>
+      <span>
+        Earth imagery: Reto Stöckli, NASA Earth Observatory (Blue Marble NG, public domain)
+        {
+          modelLive && (
+            <>
+              {' · '}Concorde model by{' '}
+              <a href="https://sketchfab.com/3d-models/concorde-6d95290363474798a429a38bbf9ad49d" rel="noopener">
+                manilov.ap
+              </a>{' '}
+              (CC BY 4.0)
+            </>
+          )
+        }
+      </span>
+    </footer>
+
+    <script>
+      import '../scripts/flight.ts';
+    </script>
+  </body>
+</html>
