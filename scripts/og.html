@@ -1,0 +1,50 @@
+<!doctype html>
+<!-- Share card source. Rendered to public/og.png by scripts/gen-images.mjs (headless Chrome, 1200×630). -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<style>
+  @font-face { font-family: 'Archivo V'; font-weight: 100 900; font-stretch: 62% 125%; src: url('../public/fonts/archivo-latin-wdth-normal.woff2') format('woff2-variations'); }
+  @font-face { font-family: 'JetBrains Mono V'; font-weight: 100 800; src: url('../public/fonts/jetbrains-mono-latin-wght-normal.woff2') format('woff2-variations'); }
+  html, body { margin: 0; }
+  body { width: 1200px; height: 630px; overflow: hidden; position: relative; font-family: 'Archivo V', sans-serif; color: #e8edf5;
+    background: radial-gradient(120% 70% at 50% 108%, rgba(127,211,255,.22), transparent 60%), linear-gradient(180deg, #2a3f6b 0%, #1b2a4e 45%, #070b1a 100%); }
+  .stars { position: absolute; inset: 0; background-image:
+    radial-gradient(1.5px 1.5px at 8% 12%, #e8edf5 50%, transparent), radial-gradient(1px 1px at 22% 30%, #e8edf5 50%, transparent),
+    radial-gradient(1.5px 1.5px at 35% 8%, #e8edf5 50%, transparent), radial-gradient(1px 1px at 48% 22%, #e8edf5 50%, transparent),
+    radial-gradient(2px 2px at 61% 14%, #e8edf5 50%, transparent), radial-gradient(1px 1px at 72% 34%, #e8edf5 50%, transparent),
+    radial-gradient(1.5px 1.5px at 84% 9%, #e8edf5 50%, transparent), radial-gradient(1px 1px at 93% 26%, #e8edf5 50%, transparent),
+    radial-gradient(1px 1px at 15% 46%, #e8edf5 50%, transparent), radial-gradient(1.5px 1.5px at 56% 40%, #e8edf5 50%, transparent),
+    radial-gradient(1px 1px at 78% 48%, #e8edf5 50%, transparent), radial-gradient(1px 1px at 30% 52%, #e8edf5 50%, transparent);
+    opacity: .75; }
+  /* Earth limb: the 3k NASA texture on a big disc, atmosphere as a cyan rim */
+  .earth { position: absolute; left: 50%; top: 470px; width: 2600px; height: 2600px; margin-left: -1300px; border-radius: 50%; overflow: hidden;
+    background: url('../public/textures/earth-3k.webp') 60% 42% / 210% auto no-repeat, #1b2a4e;
+    box-shadow: 0 0 60px 14px rgba(127,211,255,.42), inset 0 40px 80px rgba(127,211,255,.35); }
+  .earth::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(7,11,26,0) 0%, rgba(7,11,26,.7) 9%); }
+  .route { position: absolute; left: 0; top: 0; width: 1200px; height: 630px; }
+  .name { position: absolute; left: 0; right: 0; top: 176px; text-align: center; font-size: 116px; font-weight: 600; font-stretch: 125%; line-height: 1; letter-spacing: .02em;
+    color: #7fd3ff; text-shadow: 0 0 22px rgba(127,211,255,.55), 0 0 3px rgba(127,211,255,.9); }
+  .pitch { position: absolute; left: 150px; right: 150px; top: 338px; text-align: center; font-size: 27px; line-height: 1.35; color: rgba(232,237,245,.9); text-wrap: balance; }
+  .mono { font-family: 'JetBrains Mono V', monospace; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; }
+  .eyebrow { position: absolute; left: 0; right: 0; top: 118px; text-align: center; font-size: 20px; color: rgba(232,237,245,.78); }
+  .strip { position: absolute; left: 64px; right: 64px; bottom: 44px; display: flex; justify-content: space-between; align-items: center; font-size: 20px; color: #e8edf5;
+    padding: 16px 26px; border-radius: 999px; background: linear-gradient(180deg, rgba(27,42,78,.78), rgba(7,11,26,.86));
+    box-shadow: inset 1px 1px 0 rgba(232,237,245,.38), inset -1px -1px 0 rgba(127,211,255,.28), 0 12px 32px -14px rgba(7,11,26,.85); }
+  .strip b { color: #ff7a2f; font-weight: 600; }
+  .strip .c { color: #7fd3ff; }
+</style>
+</head>
+<body>
+  <div class="stars"></div>
+  <div class="earth"></div>
+  <svg class="route" viewBox="0 0 1200 630" fill="none" stroke="#7fd3ff" stroke-width="2">
+    <path d="M 120 560 C 300 380, 520 300, 640 292 S 940 330, 1080 250" stroke-dasharray="10 8" opacity=".55"/>
+    <g transform="translate(640 292)" stroke-width="3" stroke-linecap="round" style="filter: drop-shadow(0 0 6px rgba(127,211,255,.8))"><circle r="9"/><path d="M-9 0H-30M9 0H30M0-9V-22"/></g>
+  </svg>
+  <p class="eyebrow mono">SDE 2 at NetApp · Bengaluru, India</p>
+  <h1 class="name">YASH SHAH</h1>
+  <p class="pitch">Computer-vision and machine-learning systems — from published research to the factory floor.</p>
+  <div class="strip mono"><span><b>YS</b> yashshah.net</span><span class="c">MAA → LYS → BOM → ICN → BLR</span></div>
+</body>
+</html>

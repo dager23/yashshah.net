@@ -1,9 +1,11 @@
 ---
 import '../styles/strato-base.css';
 import '../styles/strato-sections.css';
+import '../styles/strato-live.css';
 import { ClientRouter } from 'astro:transitions';
 import Meta from '../components/Meta.astro';
 import { site, links } from '../data/site';
+import { route } from '../data/flightplan';
 
 interface Props {
   title?: string;
@@ -66,6 +68,9 @@ const modelLive = false;
 
     <footer class="foot mono">
       <span>© {year} {site.name}</span>
+      <span class="foot__route" aria-label={`Route: ${route.map((c) => c.name).join(' to ')}`}>
+        {route.map((c, i) => (<>{i > 0 && <i aria-hidden="true"></i>}<b>{c.code}</b></>))}
+      </span>
       <span>
         Earth imagery: Reto Stöckli, NASA Earth Observatory (Blue Marble NG, public domain)
         {

@@ -1,73 +1,55 @@
-// Regenerates public/og.png and the favicon set from geometric primitives + the
-// site's own typefaces. Deterministic and offline. Run: npm run gen:images
-//
-// resvg needs static (non-variable) TTF/OTF and an ABSOLUTE fontFiles path.
-// The two files in scripts/fonts/ are single-weight, latin-subset instances of
-// the webfonts, frozen with:
-//   python -m fontTools.ttLib.woff2 decompress -o v.ttf <name>.woff2
-//   fonttools varLib.instancer v.ttf wght=460 opsz=18 -o scripts/fonts/newsreader-static.ttf
-import { writeFileSync } from 'node:fs';
+// Regenerates public/og.png and the favicon set. Deterministic and offline.
+//   - og.png: headless Chrome renders scripts/og.html (the site's own variable fonts + Earth texture)
+//   - favicons: resvg rasterises an inline SVG of the HUD flight-path marker
+// Run: npm run gen:images
+import { execFileSync } from 'node:child_process';
+import { existsSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { Resvg } from '@resvg/resvg-js';
 
-const SERIF_FILE = resolve('scripts/fonts/newsreader-static.ttf');
-const MONO_FILE = resolve('scripts/fonts/jetbrainsmono-static.ttf');
-const SERIF = 'Newsreader 16pt';
-const MONO = 'JetBrains Mono';
-
-const PAPER = '#fbf9f4';
-const INK = '#16150f';
-const INK2 = '#56534a';
-const RULE = '#cfc9ba';
-const SIGNAL = '#b03a1f';
-
-function render(svg, width, defaultFontFamily) {
-  return new Resvg(svg, {
-    fitTo: { mode: 'width', value: width },
-    font: {
-      fontFiles: [SERIF_FILE, MONO_FILE],
-      loadSystemFonts: false,
-      defaultFontFamily,
-    },
-    background: 'rgba(0,0,0,0)',
-  })
-    .render()
-    .asPng();
-}
-
 /* ---------- Open Graph card: 1200 x 630 ---------- */
-const spineX = 240;
-const og = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
-  <rect width="1200" height="630" fill="${PAPER}"/>
-  <line x1="${spineX}" y1="0" x2="${spineX}" y2="630" stroke="${RULE}" stroke-width="2"/>
-  <circle cx="${spineX}" cy="300" r="9" fill="${SIGNAL}"/>
-  <text x="112" y="150" font-family="${MONO}" font-size="24" letter-spacing="6" fill="${INK2}">YASH SHAH</text>
-  <text x="300" y="320" font-family="${SERIF}" font-size="94" fill="${INK}">SDE 2 at NetApp.</text>
-  <text x="300" y="388" font-family="${SERIF}" font-size="38" fill="${INK2}">Computer-vision and machine-learning systems.</text>
-  <text x="300" y="520" font-family="${MONO}" font-size="24" letter-spacing="2" fill="${INK2}">yashshah.net</text>
-</svg>`;
-writeFileSync('public/og.png', render(og, 1200, SERIF));
+const CHROME = [
+  process.env.CHROME_PATH,
+  'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+  'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
+  '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+  '/usr/bin/google-chrome',
+].find((p) => p && existsSync(p));
+if (!CHROME) throw new Error('Chrome not found — set CHROME_PATH to the browser executable');
+
+execFileSync(
+  CHROME,
+  [
+    '--headless=new', '--disable-gpu', '--hide-scrollbars', '--no-first-run',
+    '--force-device-scale-factor=1', '--window-size=1200,630', '--virtual-time-budget=4000',
+    `--screenshot=${resolve('public/og.png')}`, pathToFileURL(resolve('scripts/og.html')).href,
+  ],
+  { stdio: 'ignore' }
+);
 console.log('wrote public/og.png (1200x630)');
 
-/* ---------- favicon: spine + dot, no text ---------- */
+/* ---------- favicon: the flight-path marker on ink ---------- */
+const INK = '#0b1020', INSTR = '#7fd3ff';
+const marker = (s, r) => `<rect width="${s}" height="${s}" rx="${r}" fill="${INK}"/>
+  <g fill="none" stroke="${INSTR}" stroke-width="${s * 0.078}" stroke-linecap="round" transform="translate(${s / 2} ${s * 0.54})">
+    <circle r="${s * 0.135}"/>
+    <path d="M${-s * 0.135} 0H${-s * 0.36}M${s * 0.135} 0H${s * 0.36}M0 ${-s * 0.135}V${-s * 0.31}"/>
+  </g>`;
 const faviconSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <rect x="13.5" y="3" width="2.6" height="26" rx="1.3" fill="#726d61"/>
-  <circle cx="14.8" cy="15" r="5.4" fill="${SIGNAL}"/>
+  ${marker(32, 7)}
 </svg>
 `;
 writeFileSync('public/favicon.svg', faviconSvg);
-console.log('wrote public/favicon.svg');
 
-const png32 = render(faviconSvg, 32, SERIF);
+const render = (svg, width) => new Resvg(svg, { fitTo: { mode: 'width', value: width } }).render().asPng();
+const png32 = render(faviconSvg, 32);
 writeFileSync('public/favicon-32.png', png32);
-
-const appleSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="180" height="180" viewBox="0 0 180 180">
-  <rect width="180" height="180" fill="${PAPER}"/>
-  <rect x="82" y="34" width="15" height="112" rx="7" fill="#726d61"/>
-  <circle cx="89" cy="98" r="30" fill="${SIGNAL}"/>
-</svg>`;
-writeFileSync('public/apple-touch-icon.png', render(appleSvg, 180, SERIF));
-console.log('wrote public/favicon-32.png, public/apple-touch-icon.png');
+writeFileSync(
+  'public/apple-touch-icon.png',
+  render(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180">${marker(180, 0)}</svg>`, 180)
+);
+console.log('wrote public/favicon.svg, favicon-32.png, apple-touch-icon.png');
 
 /* ---------- favicon.ico wrapping the 32px PNG ---------- */
 const ico = Buffer.alloc(22 + png32.length);

@@ -10,11 +10,11 @@ the alternative. All content comes unchanged from `src/data/*` and `src/content/
 | --- | --- | --- |
 | Gate / takeoff | hero `#gate` | the flight deck at dawn: full-bleed windscreen (no frame), name on the HUD, pitch on the centre display; scrolling pushes through into the sky, and the readout undocks as the cockpit clears |
 | Climb | `#about` (about + toolkit) | sky cross-fades to cruise; toolkit as instrument gauges |
-| Mach 1 | entering `#waypoints` | one vapour ring; readout flashes amber |
-| Cruise | `#waypoints` | Earth limb + stars; each project docks in as a display unit (EFMIX → URBST → VIDGP → DCATH) |
-| Flight log | `#log` | experience as logbook entries + great-circle route map in a display bezel |
-| Clearances | `#clearances` | honours as stamps; Diagnostics paper (DOI) and patent as slips |
-| Landing | `#contact` | dusk sky, touchdown, résumé as a boarding pass |
+| Mach 1 | entering `#waypoints` | one vapour ring, a shock line sweeps the viewport, readout flashes amber |
+| Cruise | `#waypoints` | Earth limb + twinkling stars (the globe keeps turning on desktop); each project docks in as a display unit (EFMIX → URBST → VIDGP → DCATH), threaded by a dashed leg with star markers |
+| Flight log | `#log` | experience as logbook entries with airport-code chips; the route map sits beside them (sticky on desktop) and the leg into each role's city lights up as you pass it |
+| Clearances | `#clearances` | honours stamp themselves onto the page; Diagnostics paper (DOI) and patent as slips |
+| Landing | `#contact` | dusk sky, touchdown, résumé as a boarding pass that tilts under the pointer; footer is a flight strip |
 
 ## Files
 
@@ -27,7 +27,8 @@ the alternative. All content comes unchanged from `src/data/*` and `src/content/
 | `src/scripts/fallback2d.ts` | 2D route + SVG flight-path marker (hero poster, and the no-WebGL fallback) |
 | `src/scripts/path.ts` | the route's control points, shared by 3D and 2D |
 | `src/data/flightplan.ts` | waypoint idents, city coordinates, Concorde cruise figures (presentation only) |
-| `src/styles/strato-*.css` | tokens, sky phases, instrument layer, sections |
+| `src/styles/strato-*.css` | tokens, sky phases, instrument layer, sections; `strato-live.css` is everything that moves or reacts — runway lights, the Mach 1 shock line, liquid-glass v2 (pointer specular, sky-tinted rim), waypoint connectors, log ↔ map sync, passport stamps, boarding-pass tilt, footer flight strip |
+| `scripts/gen-images.mjs` + `scripts/og.html` | share card (headless Chrome renders the HTML with the site's fonts and Earth texture) and the flight-path-marker favicons — `npm run gen:images` |
 | `CREDITS.md` | every third-party asset, source, author, licence |
 
 ## Adding the Concorde model
@@ -60,6 +61,7 @@ The plane is a HUD flight-path marker until the sourced model is in place.
 | Lighthouse desktop (2026-09-11, before the flight-deck hero) | 100 · 100 · 100 · 100 — LCP 0.5 s, TBT 0 ms, CLS 0 |
 | Flight deck (2026-09-12) | wide stage at 1440×900, tall stage at 375×812; the push-through clears by 65 % of the gate, before liftoff and the dawn → cruise fade; readout undocks as it clears |
 | Phone width (2026-09-12) | page is exactly viewport-wide (sections clip the panels' slide-in on x) |
+| Live-instrument pass (2026-09-12) | Lighthouse mobile unchanged at 97 · 100 · 100 · 100 (LCP 2.2 s, TBT 110 ms, CLS 0); log ↔ map sync, connectors, stamps, footer strip checked at 1440×900 and 375×812; share card rendered from `scripts/og.html` |
 | JS (gzip) | ≈ 196 KB total (core 54 KB + router 6 KB; three.js 135 KB loads on first interaction) |
 | Contrast | every ink/sky/panel pairing computed ≥ 4.5:1 |
 | JS off | all content present in the static HTML |

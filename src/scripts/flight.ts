@@ -12,6 +12,8 @@ import { getState, setState, type Phase } from './store';
 gsap.registerPlugin(ScrollTrigger, SplitText);
 
 const reduced = getState().reduced;
+const canHover = matchMedia('(hover: hover) and (pointer: fine)').matches;
+const root = document.documentElement;
 let lenis: Lenis | null = null;
 let ctx: gsap.Context | null = null;
 let sceneRequested = false;
@@ -138,8 +140,13 @@ function update(scrollP: number): void {
   const phase: Phase = st.parked ? 'cruise' : phaseOf(p);
   setState({ progress: p, u: st.parked ? 0.62 : toU(p), phase, waypoint: st.parked ? parkedIdent : activeWpt });
 
-  if (els.dawn) els.dawn.style.opacity = String(st.parked ? 0 : 1 - smooth(keys.dawn0, keys.dawn1, p));
-  if (els.dusk) els.dusk.style.opacity = String(st.parked ? 0 : smooth(keys.dusk0, keys.dusk1, p));
+  const dawn = st.parked ? 0 : 1 - smooth(keys.dawn0, keys.dawn1, p);
+  const dusk = st.parked ? 0 : smooth(keys.dusk0, keys.dusk1, p);
+  if (els.dawn) els.dawn.style.opacity = String(dawn);
+  if (els.dusk) els.dusk.style.opacity = String(dusk);
+  // the glass chrome tints with the sky (strato-live.css)
+  root.style.setProperty('--dawn', dawn.toFixed(3));
+  root.style.setProperty('--dusk', dusk.toFixed(3));
 
   odo(els.mach, mach(p).toFixed(2));
   const alt = Math.round(altitude(p) / 100) * 100;
@@ -151,7 +158,17 @@ function update(scrollP: number): void {
     setState({ machBurst: true });
     els.mach?.classList.add('is-amber');
     setTimeout(() => els.mach?.classList.remove('is-amber'), 1600);
+    sonicBoom();
   }
+}
+
+/* ─── Mach 1: one shock line sweeps the viewport (styles in strato-live.css) ── */
+function sonicBoom(): void {
+  const el = document.createElement('div');
+  el.className = 'shock';
+  el.setAttribute('aria-hidden', 'true');
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 1300);
 }
 
 /* ─── gate: push through the windscreen; the readout undocks as the deck clears ─── */
@@ -179,6 +196,68 @@ function pushThrough(): void {
     .to(q('.deck__frame'), { scale: 2.6, ease: 'power2.in', duration: 0.6 }, 0)
     .to(q('.deck__view'), { yPercent: 16, scale: 1.2, ease: 'power1.in', duration: 0.55 }, 0.05) // nose up: the horizon drops
     .to(q('.deck__stage'), { autoAlpha: 0, duration: 0.3 }, 0.35);
+}
+
+/* ─── flight log ↔ route map: the leg into each role's city lights as you pass it ─── */
+function logSync(): void {
+  const map = document.querySelector('.routemap');
+  if (!map) return;
+  const light = (entry: HTMLElement) => {
+    const code = entry.dataset.code;
+    document.querySelectorAll('.entry.is-here, .routemap .is-active').forEach((el) => el.classList.remove('is-here', 'is-active'));
+    entry.classList.add('is-here');
+    map.querySelectorAll(`[data-code="${code}"], [data-to="${code}"]`).forEach((el) => el.classList.add('is-active'));
+  };
+  document.querySelectorAll<HTMLElement>('.entry[data-code]').forEach((el) => {
+    ScrollTrigger.create({
+      trigger: el, start: 'top 62%', end: 'bottom 38%',
+      onToggle: (self) => { if (self.isActive) light(el); },
+    });
+  });
+}
+
+/* ─── clearances: each honour is stamped onto the page once ──────────── */
+function stamps(): void {
+  document.querySelectorAll<HTMLElement>('.stamp').forEach((el, i) => {
+    if (reduced) { el.classList.add('is-stamped'); return; }
+    ScrollTrigger.create({
+      trigger: el, start: 'top 88%', once: true,
+      onEnter: () => setTimeout(() => el.classList.add('is-stamped'), (i % 4) * 90), // a row lands left to right
+    });
+  });
+}
+
+/* ─── liquid glass: the specular highlight follows the pointer; the pass tilts ─── */
+let chrome: HTMLElement[] = [];
+let px = 0, py = 0, sheenRaf = 0;
+function sheen(): void {
+  sheenRaf = 0;
+  for (const el of chrome) {
+    const r = el.getBoundingClientRect();
+    el.style.setProperty('--mx', `${(((px - r.left) / r.width) * 100).toFixed(1)}%`);
+    el.style.setProperty('--my', `${(((py - r.top) / r.height) * 100).toFixed(1)}%`);
+  }
+}
+if (canHover) {
+  document.addEventListener('pointermove', (e) => {
+    px = e.clientX; py = e.clientY;
+    if (!sheenRaf) sheenRaf = requestAnimationFrame(sheen);
+  }, { passive: true });
+}
+function passTilt(): void {
+  const pass = document.querySelector<HTMLElement>('.pass');
+  if (!pass || !canHover || reduced) return;
+  pass.addEventListener('pointermove', (e) => {
+    const r = pass.getBoundingClientRect();
+    const x = (e.clientX - r.left) / r.width - 0.5, y = (e.clientY - r.top) / r.height - 0.5;
+    pass.style.setProperty('--ry', `${(x * 14).toFixed(2)}deg`);
+    pass.style.setProperty('--rx', `${(-y * 10).toFixed(2)}deg`);
+    pass.style.setProperty('--sx', (x + 0.5).toFixed(3));
+  });
+  pass.addEventListener('pointerleave', () => {
+    pass.style.removeProperty('--rx');
+    pass.style.removeProperty('--ry');
+  });
 }
 
 /* ─── masked line reveals, once each ─────────────────────────────────── */
@@ -275,6 +354,7 @@ function initPage(): void {
     dawn: document.querySelector('.sky__dawn'),
     dusk: document.querySelector('.sky__dusk'),
   };
+  chrome = [...document.querySelectorAll<HTMLElement>('.hdr, .readout')];
   setState({ parked: parkedIdent !== null, machBurst: false });
   if (reduced) document.querySelectorAll('.panel').forEach((p) => p.classList.add('is-docked'));
 
@@ -283,7 +363,10 @@ function initPage(): void {
     triggers();
     reveals();
     pushThrough();
+    logSync();
+    stamps();
   });
+  passTilt();
   lenis?.resize();
   ScrollTrigger.refresh();
   update(ScrollTrigger.maxScroll(window) ? scrollY / ScrollTrigger.maxScroll(window) : 0);

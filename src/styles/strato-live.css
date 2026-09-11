@@ -1,0 +1,131 @@
+/* ─── Stratosphere — live instruments: things that move, glow or react ──────────
+   Loaded after strato-sections.css; a few rules deliberately override it. */
+
+/* ─── hero: runway edge lights breathe (static under reduced motion via base.css) ─── */
+.js .deck__lights circle { animation: rwy-blink 2.8s ease-in-out infinite; }
+.js .deck__lights circle:nth-child(3n) { animation-delay: -0.9s; }
+.js .deck__lights circle:nth-child(3n + 1) { animation-delay: -1.9s; }
+@keyframes rwy-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+/* ─── Mach 1: one shock line sweeps the viewport, with a brief flash (flight.ts adds/removes it) ─── */
+.shock { position: fixed; inset: 0; z-index: 35; pointer-events: none; overflow: hidden; }
+.shock::before {
+  content: ''; position: absolute; top: 50%; left: -20vw; width: 140vw; height: 2px; rotate: -7deg;
+  background: linear-gradient(90deg, transparent, rgb(232 237 245 / 0.9) 30%, var(--instr) 50%, rgb(232 237 245 / 0.9) 70%, transparent);
+  box-shadow: 0 0 26px 6px rgb(127 211 255 / 0.45);
+  animation: shock-line 1s var(--ease-out) both;
+}
+.shock::after { content: ''; position: absolute; inset: 0; background: var(--ink-light); animation: shock-flash 0.6s ease-out both; }
+@keyframes shock-line {
+  0% { transform: translateY(-62vh) scaleX(0.3); opacity: 0; }
+  18% { opacity: 1; }
+  100% { transform: translateY(62vh) scaleX(1); opacity: 0; }
+}
+@keyframes shock-flash { 0% { opacity: 0.28; } 100% { opacity: 0; } }
+
+/* ─── liquid glass v2: refractive rim, pointer-tracked specular, tint follows the sky ───
+   --dawn / --dusk are the sky cross-fade values (flight.ts); --mx / --my the pointer. */
+.hdr, .readout { --mx: 50%; --my: 0%; --dawn: 1; --dusk: 0; border-color: transparent; background-clip: padding-box; }
+.hdr {
+  box-shadow:
+    inset 1px 1px 0 rgb(232 237 245 / 0.42),
+    inset -1px -1px 0 color-mix(in srgb, var(--instr), var(--amber) calc(var(--dusk) * 100%)),
+    inset 0 -12px 24px -14px color-mix(in srgb, rgb(127 211 255 / 0.6), rgb(255 122 47 / 0.6) calc(var(--dusk) * 100%)),
+    0 12px 32px -14px rgb(7 11 26 / 0.85);
+}
+@media (min-width: 768px) {
+  .readout {
+    box-shadow:
+      var(--bezel),
+      inset 1px 1px 0 rgb(232 237 245 / 0.38),
+      inset -1px -1px 0 color-mix(in srgb, var(--instr), var(--amber) calc(var(--dusk) * 100%));
+  }
+}
+.hdr::before, .hdr::after, .readout::before, .readout::after {
+  content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: -1;
+}
+/* the specular: a soft lens highlight that slides under the pointer */
+.hdr::before, .readout::before {
+  background: radial-gradient(11rem 3.5rem at var(--mx) var(--my), rgb(232 237 245 / 0.26), transparent 70%);
+  transition: opacity 0.3s;
+}
+/* dawn haze on the glass at the gate; it clears as the sky turns to cruise */
+.hdr::after, .readout::after {
+  background: linear-gradient(180deg, rgb(221 230 238 / 0.22), rgb(221 230 238 / 0.04));
+  opacity: var(--dawn);
+}
+.hdr > *, .readout > * { position: relative; z-index: 1; }
+
+/* ─── cruise: a dashed leg line threads the project panels, a star marks each waypoint ─── */
+@media (min-width: 900px) {
+  .wpt { position: relative; }
+  .wpt::before {
+    content: ''; position: absolute; top: 0; bottom: 0; left: calc(var(--pad-x) - 1.6rem);
+    border-left: 1px dashed rgb(127 211 255 / 0.45);
+  }
+  .wpt__star {
+    position: absolute; top: 50%; left: calc(var(--pad-x) - 1.6rem); width: 14px; height: 14px; translate: -50% -50%;
+    background: var(--ink-light);
+    clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%);
+    filter: drop-shadow(0 0 5px var(--instr));
+    transition: scale 0.5s var(--ease-out), background 0.3s;
+  }
+  .wpt:has(.panel.is-docked) .wpt__star { scale: 1.5; background: var(--amber); filter: drop-shadow(0 0 6px rgb(255 122 47 / 0.8)); }
+}
+.wpt__star { display: none; }
+@media (min-width: 900px) { .wpt__star { display: block; } }
+
+/* ─── flight log ↔ route map ─── */
+.log { display: grid; gap: 2.5rem; align-items: start; }
+@media (min-width: 1100px) {
+  .log { grid-template-columns: minmax(0, 40rem) minmax(22rem, 1fr); gap: 3.5rem; }
+  .log .routemap { position: sticky; top: 6.5rem; margin-top: 9.5rem; width: 100%; }
+}
+.chip {
+  display: inline-block; margin-left: 0.6em; padding: 0.15em 0.5em; border: 1px solid var(--instr); border-radius: 2px;
+  color: var(--instr); font-size: 0.92em; vertical-align: 0.1em;
+  transition: background 0.3s, color 0.3s, box-shadow 0.3s;
+}
+.entry.is-here .chip { background: var(--instr); color: var(--ink-dark); box-shadow: 0 0 12px rgb(127 211 255 / 0.5); }
+.route-arc { opacity: 0.55; transition: opacity 0.4s, stroke 0.4s; }
+.route-arc.is-active { stroke: var(--amber); stroke-dasharray: none; opacity: 1; filter: drop-shadow(0 0 4px rgb(255 122 47 / 0.7)); }
+.route-city circle { transition: r 0.3s var(--ease-out), fill 0.3s; }
+.route-city.is-active > circle:not(.route-city__ping) { r: 9; fill: var(--ink-light); filter: drop-shadow(0 0 6px var(--instr)); }
+.route-city.is-active text { fill: var(--amber); }
+.route-city__ping { fill: none; stroke: var(--instr); stroke-width: 2; opacity: 0; transform-box: fill-box; transform-origin: center; }
+.route-city.is-active .route-city__ping { animation: ping 1.8s ease-out infinite; }
+@keyframes ping { 0% { transform: scale(1); opacity: 0.9; } 100% { transform: scale(4); opacity: 0; } }
+
+/* ─── clearances: each honour is stamped onto the page once it's in view ─── */
+.stamp { outline: 1px solid var(--instr); outline-offset: -5px; }
+.js .stamp { opacity: 0; }
+.js .stamp.is-stamped { opacity: 1; animation: stamp-in 0.6s cubic-bezier(0.2, 1.3, 0.35, 1) both; }
+@keyframes stamp-in {
+  0% { opacity: 0; transform: scale(1.45) rotate(-5deg); }
+  60% { opacity: 1; transform: scale(0.97) rotate(0.5deg); }
+  100% { opacity: 1; transform: none; }
+}
+
+/* ─── landing: the boarding pass tilts under the pointer, with a holographic sheen ─── */
+.pass { transform-style: preserve-3d; }
+.pass, .pass:hover { transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)); }
+.pass:hover { transition-duration: 0.15s; }
+.pass::after {
+  content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  background: linear-gradient(115deg, transparent 32%, rgb(127 211 255 / 0.28) 44%, rgb(255 255 255 / 0.45) 50%, rgb(255 122 47 / 0.22) 56%, transparent 68%);
+  background-size: 260% 100%; background-position: calc(var(--sx, 0.5) * 100%) 0;
+  opacity: 0; transition: opacity 0.3s;
+}
+.pass:hover::after { opacity: 1; }
+
+/* ─── footer as a flight strip ─── */
+.foot { align-items: center; }
+.foot__route { display: inline-flex; align-items: center; gap: 0.6em; color: var(--instr); }
+.foot__route b { font-weight: 600; }
+.foot__route i { display: inline-block; width: 1.4em; height: 1px; background: currentColor; opacity: 0.55; }
+
+@media (prefers-reduced-motion: reduce) {
+  .shock { display: none; }
+  .route-city.is-active .route-city__ping { animation: none; }
+  .pass, .pass:hover { transform: none; }
+}

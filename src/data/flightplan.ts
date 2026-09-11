@@ -32,6 +32,12 @@ export const route: City[] = [
   { code: 'BLR', name: 'Bengaluru', lon: 77.59, lat: 12.97 },
 ];
 
+/** Airport code for a place named in experience.ts / education.ts (by city); null when the route doesn't pass there. */
+export function codeFor(location: string): string | null {
+  const city = location.split(',')[0].trim().toLowerCase();
+  return route.find((c) => c.name.toLowerCase() === city)?.code ?? null;
+}
+
 /** Map projection window used by public/textures/route-region.webp. */
 export const mapWindow = { lonMin: -15, lonMax: 145, latMax: 65, latMin: -5, width: 1600, height: 700 };
 

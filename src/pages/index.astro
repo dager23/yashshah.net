@@ -8,7 +8,7 @@ import { achievements } from '../data/achievements';
 import { education } from '../data/education';
 import { publications } from '../data/publications';
 import { toolkit } from '../data/toolkit';
-import { idents, route, mapWindow } from '../data/flightplan';
+import { idents, route, mapWindow, codeFor } from '../data/flightplan';
 import arrowUpRight from 'lucide-static/icons/arrow-up-right.svg?raw';
 import arrowRight from 'lucide-static/icons/arrow-right.svg?raw';
 
@@ -112,6 +112,7 @@ const edu = education[0];
         const result = resultOf(p.body);
         return (
           <article class="wpt" data-wpt={ident} id={`wpt-${p.id}`} aria-labelledby={`t-${p.id}`}>
+            <span class="wpt__star" aria-hidden="true"></span>
             <div class="panel brackets">
               <p class="panel__hdr mono">
                 <b data-tick>{ident}</b>
@@ -143,47 +144,56 @@ const edu = education[0];
 
   <!-- 5 · FLIGHT LOG — experience + route ──────────────────────────── -->
   <section class="leg phase-cruise" data-leg="descent" id="log" aria-labelledby="log-title">
-    <div class="leg__col">
-      <p class="eyebrow">Flight log</p>
-      <h2 class="leg__title" id="log-title" data-reveal>Experience</h2>
-      <ol class="logbook" role="list">
-        {
-          experience.map((r) => (
-            <li class="entry">
-              <p class="entry__when mono">{dateRange(r)}</p>
-              <div>
-                <h3>
-                  {r.title}, {r.company}
-                  <small>{r.location}</small>
-                </h3>
-                {r.bullets.length > 0 && (
-                  <ul>
-                    {r.bullets.map((b) => (
-                      <li>{b}</li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            </li>
-          ))
-        }
-      </ol>
+    <div class="log">
+      <div class="leg__col">
+        <p class="eyebrow">Flight log</p>
+        <h2 class="leg__title" id="log-title" data-reveal>Experience</h2>
+        <ol class="logbook" role="list">
+          {
+            experience.map((r) => {
+              const code = codeFor(r.location); // lights this role's leg on the map as it scrolls past
+              return (
+                <li class="entry" data-code={code}>
+                  <p class="entry__when mono">
+                    {dateRange(r)}
+                    {code && <span class="chip">{code}</span>}
+                  </p>
+                  <div>
+                    <h3>
+                      {r.title}, {r.company}
+                      <small>{r.location}</small>
+                    </h3>
+                    {r.bullets.length > 0 && (
+                      <ul>
+                        {r.bullets.map((b) => (
+                          <li>{b}</li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                </li>
+              );
+            })
+          }
+        </ol>
+      </div>
+      <figure class="routemap" data-reveal-fig>
+        <img src="/textures/route-region.webp" width="1600" height="700" alt="" loading="lazy" decoding="async" />
+        <svg viewBox="0 0 1600 700" role="img" aria-label={`Route: ${route.map((c) => c.name).join(' to ')}`}>
+          {legs.map((d, i) => <path class="route-arc" d={d} data-to={route[i + 1].code} />)}
+          {
+            cities.map((c) => (
+              <g class="route-city" data-code={c.code} transform={`translate(${c.xy[0].toFixed(1)} ${c.xy[1].toFixed(1)})`}>
+                <circle class="route-city__ping" r="6" />
+                <circle r="6" />
+                <text x="12" y="-10">{c.code} · {c.name.toUpperCase()}</text>
+              </g>
+            ))
+          }
+        </svg>
+        <figcaption class="mono">Great-circle route · places in the log, in order</figcaption>
+      </figure>
     </div>
-    <figure class="routemap" data-reveal-fig>
-      <img src="/textures/route-region.webp" width="1600" height="700" alt="" loading="lazy" decoding="async" />
-      <svg viewBox="0 0 1600 700" role="img" aria-label={`Route: ${route.map((c) => c.name).join(' to ')}`}>
-        {legs.map((d) => <path class="route-arc" d={d} />)}
-        {
-          cities.map((c) => (
-            <g class="route-city" transform={`translate(${c.xy[0].toFixed(1)} ${c.xy[1].toFixed(1)})`}>
-              <circle r="6" />
-              <text x="12" y="-10">{c.code} · {c.name.toUpperCase()}</text>
-            </g>
-          ))
-        }
-      </svg>
-      <figcaption class="mono">Great-circle route · places in the log, in order</figcaption>
-    </figure>
   </section>
 
   <!-- 6 · CLEARANCES — honours + publications ─────────────────────── -->

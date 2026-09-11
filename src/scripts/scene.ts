@@ -8,7 +8,7 @@
 import {
   AdditiveBlending, BackSide, Box3, BufferGeometry, CanvasTexture, CatmullRomCurve3, Color, DirectionalLight,
   Float32BufferAttribute, Group, Line, LineBasicMaterial, LineDashedMaterial, Mesh, MeshStandardMaterial,
-  PerspectiveCamera, PMREMGenerator, Points, PointsMaterial, Scene, ShaderMaterial, SphereGeometry, Sprite,
+  PerspectiveCamera, PMREMGenerator, Points, Scene, ShaderMaterial, SphereGeometry, Sprite,
   SpriteMaterial, SRGBColorSpace, TextureLoader, Vector3, WebGLRenderer, ACESFilmicToneMapping,
 } from 'three';
 import { DESKTOP, MOBILE, isNarrow } from './path';
@@ -105,38 +105,51 @@ export function startScene(canvas: HTMLCanvasElement): boolean {
   const globe = new Mesh(new SphereGeometry(1, mobile ? 48 : 96, mobile ? 32 : 64), earthMat);
   globe.rotation.set(0.35, -1.75, 0); // Indian Ocean under the limb
   earth.add(globe);
-  let atmo: Mesh | null = null;
-  if (!mobile) {
-    atmo = new Mesh(
-      new SphereGeometry(1.035, 96, 64),
-      new ShaderMaterial({
-        uniforms: { uColor: { value: INSTR }, uStrength: { value: 1 } },
-        vertexShader: `varying vec3 vN; varying vec3 vV;
-          void main(){ vec4 mv = modelViewMatrix*vec4(position,1.); vN = normalize(normalMatrix*normal); vV = normalize(-mv.xyz); gl_Position = projectionMatrix*mv; }`,
-        fragmentShader: `uniform vec3 uColor; uniform float uStrength; varying vec3 vN; varying vec3 vV;
-          void main(){ float f = pow(1. - abs(dot(vN, vV)), 2.6); gl_FragColor = vec4(uColor * f * uStrength, f * uStrength); }`,
-        side: BackSide, transparent: true, blending: AdditiveBlending, depthWrite: false,
-      })
-    );
-    earth.add(atmo);
-  }
+  // fresnel atmosphere: the cyan rim that makes the limb read as a planet (lighter mesh on phones)
+  const atmo = new Mesh(
+    new SphereGeometry(1.035, mobile ? 48 : 96, mobile ? 32 : 64),
+    new ShaderMaterial({
+      uniforms: { uColor: { value: INSTR }, uStrength: { value: 1 } },
+      vertexShader: `varying vec3 vN; varying vec3 vV;
+        void main(){ vec4 mv = modelViewMatrix*vec4(position,1.); vN = normalize(normalMatrix*normal); vV = normalize(-mv.xyz); gl_Position = projectionMatrix*mv; }`,
+      fragmentShader: `uniform vec3 uColor; uniform float uStrength; varying vec3 vN; varying vec3 vV;
+        void main(){ float f = pow(1. - abs(dot(vN, vV)), 2.6); gl_FragColor = vec4(uColor * f * uStrength, f * uStrength); }`,
+      side: BackSide, transparent: true, blending: AdditiveBlending, depthWrite: false,
+    })
+  );
+  earth.add(atmo);
   const EARTH_R = 100;
   earth.scale.setScalar(EARTH_R);
   scene.add(earth);
 
-  /* ── stars (desktop only) ── */
-  let stars: Points | null = null;
-  if (!mobile) {
-    const pos: number[] = [];
-    for (let i = 0; i < 1400; i++) {
-      const th = Math.random() * Math.PI * 2, ph = Math.acos(2 * Math.random() - 1), r = 900;
-      pos.push(r * Math.sin(ph) * Math.cos(th), Math.abs(r * Math.cos(ph)) * 0.8 + 40, -Math.abs(r * Math.sin(ph) * Math.sin(th)) - 200);
-    }
-    const g = new BufferGeometry();
-    g.setAttribute('position', new Float32BufferAttribute(pos, 3));
-    stars = new Points(g, new PointsMaterial({ color: 0xe8edf5, size: 1.4, sizeAttenuation: false, transparent: true, opacity: 0, depthWrite: false }));
-    scene.add(stars);
+  /* ── stars: a dome behind the Earth; each one twinkles on its own phase ── */
+  const STAR_N = mobile ? 500 : 1400;
+  const pos: number[] = [], phase: number[] = [];
+  for (let i = 0; i < STAR_N; i++) {
+    const th = Math.random() * Math.PI * 2, ph = Math.acos(2 * Math.random() - 1), r = 900;
+    pos.push(r * Math.sin(ph) * Math.cos(th), Math.abs(r * Math.cos(ph)) * 0.8 + 40, -Math.abs(r * Math.sin(ph) * Math.sin(th)) - 200);
+    phase.push(Math.random());
   }
+  const starGeo = new BufferGeometry();
+  starGeo.setAttribute('position', new Float32BufferAttribute(pos, 3));
+  starGeo.setAttribute('aPhase', new Float32BufferAttribute(phase, 1));
+  const starMat = new ShaderMaterial({
+    uniforms: {
+      uTime: { value: 0 }, uOpacity: { value: 0 }, uPR: { value: renderer.getPixelRatio() },
+      uColor: { value: new Color('#e8edf5') },
+    },
+    vertexShader: `attribute float aPhase; uniform float uTime; uniform float uOpacity; uniform float uPR; varying float vA;
+      void main(){
+        vA = uOpacity * (0.55 + 0.45 * sin(uTime * (1.2 + aPhase * 1.6) + aPhase * 6.2832));
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.);
+        gl_PointSize = (1.3 + 1.1 * step(0.85, aPhase)) * uPR;
+      }`,
+    fragmentShader: `uniform vec3 uColor; varying float vA;
+      void main(){ vec2 c = gl_PointCoord - 0.5; if (dot(c, c) > 0.25) discard; gl_FragColor = vec4(uColor, vA); }`,
+    transparent: true, depthWrite: false,
+  });
+  const stars = new Points(starGeo, starMat);
+  scene.add(stars);
 
   /* ── flight plan curve (screen-normalised control points) ── */
   let curve = new CatmullRomCurve3([new Vector3(), new Vector3(0, 1, 0)]);
@@ -208,7 +221,7 @@ export function startScene(canvas: HTMLCanvasElement): boolean {
 
   /* ── state → scene ── */
   // declared before subscribe(): it fires immediately and kicks the loop
-  let uTarget = getState().u, uNow = uTarget, bank = 0, ringT = -1, dirty = true, running = false;
+  let uTarget = getState().u, uNow = uTarget, bank = 0, ringT = -1, dirty = true, running = false, spin = 0;
   let last = performance.now();
   const tmpA = new Vector3(), tmpB = new Vector3();
 
@@ -253,9 +266,16 @@ export function startScene(canvas: HTMLCanvasElement): boolean {
     const thetaTop = Math.atan((-0.86 + 0.22 * alt) * Math.tan((camera.fov * Math.PI) / 360));
     const dist = EARTH_R / Math.sin(rho), thetaC = thetaTop - rho;
     earth.position.set(0, dist * Math.sin(thetaC), camera.position.z - dist * Math.cos(thetaC));
-    globe.rotation.y = -1.75 - u * 0.5;
-    if (atmo) (atmo.material as ShaderMaterial).uniforms.uStrength.value = 0.35 + alt * 0.9;
-    if (stars) (stars.material as PointsMaterial).opacity = smooth(0.25, 0.5, u) * (1 - smooth(0.86, 0.97, u));
+    // desktop, tab visible, Earth in view: the globe keeps turning (one turn ≈ 10 min) and the stars breathe
+    const live = !mobile && !reduced && !document.hidden && u > 0.2 && u < 0.95;
+    if (live) {
+      spin += dt * 0.01;
+      starMat.uniforms.uTime.value += dt;
+      busy = true;
+    }
+    globe.rotation.y = -1.75 - u * 0.5 - spin;
+    (atmo.material as ShaderMaterial).uniforms.uStrength.value = 0.35 + alt * 0.9;
+    starMat.uniforms.uOpacity.value = smooth(0.25, 0.5, u) * (1 - smooth(0.86, 0.97, u));
 
     if (ringT >= 0) {
       ringT += dt;
@@ -284,6 +304,7 @@ export function startScene(canvas: HTMLCanvasElement): boolean {
   }
 
   addEventListener('resize', () => { layout(); kick(); });
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) kick(); });
   layout();
   kick();
   canvas.classList.add('is-live');
