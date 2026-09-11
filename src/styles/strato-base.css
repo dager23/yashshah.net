@@ -1,5 +1,13 @@
 /* ─── Stratosphere — fonts, tokens, base, instrument layer ─────────────── */
 
+/* Typed so the engine stores a computed value instead of re-resolving a token stream on every
+   read. --u feeds ~30 calc()s in the hero and --dawn/--dusk feed the glass on every scroll tick;
+   untyped, that showed up as Style & Layout being the single largest main-thread cost. */
+@property --u { syntax: '<length>'; inherits: true; initial-value: 0px; }
+@property --dawn { syntax: '<number>'; inherits: true; initial-value: 1; }
+@property --dusk { syntax: '<number>'; inherits: true; initial-value: 0; }
+@property --pale { syntax: '<number>'; inherits: true; initial-value: 1; }
+
 @font-face {
   font-family: 'Archivo Variable';
   font-style: normal;

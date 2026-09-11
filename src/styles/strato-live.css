@@ -151,12 +151,14 @@ html:not(.js) .deck__route-line { stroke-dashoffset: 0; }
 /* --dawn / --dusk are inherited from the root (defaults in strato-base.css, live values from flight.ts) —
    never redeclare them here or the glass stops following the sky */
 .hdr, .readout { --mx: 50%; --my: 0%; --pale: max(var(--dawn), var(--dusk)); border-color: transparent; background-clip: padding-box; }
+/* The material, the way Apple's actually works: the pane is barely tinted. What keeps text
+   readable is the backdrop being blurred, saturated and *dimmed* — not an opaque fill — so you
+   still see the sky, the Earth and the stars moving through it. The dimming rides --pale: nearly
+   clear over the dark cruise sky, darker only where a pale dawn/dusk sky is behind it. */
 .hdr {
-  background: linear-gradient(180deg,
-    rgb(27 42 78 / calc(0.34 + 0.44 * var(--pale))),
-    rgb(7 11 26 / calc(0.44 + 0.42 * var(--pale))));
-  -webkit-backdrop-filter: blur(20px) saturate(200%) brightness(1.08);
-  backdrop-filter: blur(20px) saturate(200%) brightness(1.08);
+  background: rgb(27 42 78 / calc(0.05 + 0.12 * var(--pale)));
+  -webkit-backdrop-filter: blur(22px) saturate(200%) brightness(calc(0.72 - 0.3 * var(--pale)));
+  backdrop-filter: blur(22px) saturate(200%) brightness(calc(0.72 - 0.3 * var(--pale)));
   box-shadow:
     inset 0 1px 0 rgb(255 255 255 / 0.45),
     inset 0 2px 8px rgb(255 255 255 / 0.12),
@@ -165,21 +167,27 @@ html:not(.js) .deck__route-line { stroke-dashoffset: 0; }
     0 1px 0 rgb(7 11 26 / 0.6),
     0 22px 44px -22px rgb(7 11 26 / 0.95);
 }
-.readout {
-  background: linear-gradient(180deg,
-    rgb(27 42 78 / calc(0.36 + 0.40 * var(--pale))),
-    rgb(7 11 26 / calc(0.48 + 0.38 * var(--pale))));
-}
+.readout { background: rgb(27 42 78 / calc(0.07 + 0.14 * var(--pale))); }
 @media (min-width: 768px) {
   .readout {
-    -webkit-backdrop-filter: blur(24px) saturate(200%) brightness(1.08);
-    backdrop-filter: blur(24px) saturate(200%) brightness(1.08);
+    -webkit-backdrop-filter: blur(20px) saturate(190%) brightness(calc(0.7 - 0.28 * var(--pale)));
+    backdrop-filter: blur(20px) saturate(190%) brightness(calc(0.7 - 0.28 * var(--pale)));
     box-shadow:
       var(--bezel),
       inset 0 1px 0 rgb(255 255 255 / 0.4),
       inset 0 2px 8px rgb(255 255 255 / 0.1),
       inset 0 -1px 0 color-mix(in srgb, rgb(127 211 255 / 0.35), rgb(255 122 47 / 0.45) calc(var(--dusk) * 100%));
   }
+}
+/* the systems cards use the same material at a fixed, deeper dim: the Earth's bright limb passes
+   behind them mid-climb, and at 0.45 the labels fell to 3.8:1 over cloud — 0.36 holds ≥ 5:1 */
+.sys {
+  -webkit-backdrop-filter: blur(16px) saturate(180%) brightness(0.36);
+  backdrop-filter: blur(16px) saturate(180%) brightness(0.36);
+}
+/* without backdrop-filter there is nothing dimming the sky — fall back to a dense fill */
+@supports not ((backdrop-filter: blur(2px)) or (-webkit-backdrop-filter: blur(2px))) {
+  .hdr, .readout, .sys { background: rgb(7 11 26 / 0.88); }
 }
 .hdr::before, .hdr::after, .readout::before, .readout::after {
   content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: -1;
@@ -248,7 +256,7 @@ html:not(.js) .deck__route-line { stroke-dashoffset: 0; }
 @keyframes blip { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
 
 /* ─── the technical voice: labels and tags in a condensed cut of Archivo (its wdth axis) ─── */
-.tags li, .chip, .gauge h3, .facts dt, .stamp small, .entry h3 small, .pass__main .mono {
+.tags li, .chip, .sys h3, .facts dt, .stamp small, .entry h3 small, .pass__main .mono {
   font-family: var(--font-wide); font-stretch: 82%; font-weight: 500; letter-spacing: 0.07em; text-transform: uppercase;
 }
 .tags li { border-radius: 999px; padding: 0.3rem 0.75rem; font-size: 0.74rem; border-color: rgb(127 211 255 / 0.3); color: rgb(232 237 245 / 0.84);
@@ -285,48 +293,53 @@ html:not(.js) .deck__route-line { stroke-dashoffset: 0; }
   .wpt:has(.panel:hover) .wpt__star { scale: 2; rotate: 45deg; background: var(--instr); filter: drop-shadow(0 0 10px var(--instr)); }
 }
 
-/* ─── toolkit as an overhead panel: sub-panels of toggle switches, all ON, each with its indicator ─── */
-.overhead { margin-top: 2.5rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: 1.25rem; }
-.panelset {
-  position: relative; padding: 0 0 0.6rem; border-radius: 6px;
-  background: linear-gradient(180deg, #16213f, var(--ink-dark));
-  box-shadow: var(--bezel), var(--specular);
-  transition: opacity 0.8s var(--ease-out), translate 0.8s var(--ease-out), box-shadow 0.45s;
+/* ─── toolkit as a systems display: the page a screen *draws* mid-flight, not cockpit hardware —
+   an Airbus ECAM system page is a bus with its components branching off it. Glass, so the sky
+   and the Earth keep moving behind it; the dimming (below) is what keeps the labels readable. ─── */
+.systems { margin-top: 2.5rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: 1.1rem; }
+.sys {
+  position: relative; padding: 0 0 0.9rem; border-radius: 8px;
+  background: rgb(127 211 255 / 0.05);
+  box-shadow:
+    inset 0 0 0 1px rgb(232 237 245 / 0.1),
+    inset 0 1px 0 rgb(255 255 255 / 0.22),
+    0 18px 40px -26px rgb(7 11 26 / 0.9);
+  transition: opacity 0.8s var(--ease-out), translate 0.45s var(--ease-out), box-shadow 0.45s;
 }
-.panelset:hover { box-shadow: var(--bezel), var(--specular), 0 0 0 1px rgb(127 211 255 / 0.3), 0 18px 40px -20px rgb(127 211 255 / 0.45); }
-.panelset h3 {
+.sys:hover {
+  translate: 0 -3px;
+  box-shadow:
+    inset 0 0 0 1px rgb(127 211 255 / 0.35),
+    inset 0 1px 0 rgb(255 255 255 / 0.3),
+    0 22px 46px -24px rgb(127 211 255 / 0.45);
+}
+.sys h3 {
   display: flex; justify-content: space-between; align-items: baseline; gap: 1rem;
-  padding: 0.8rem 1rem 0.65rem; border-bottom: 1px solid rgb(232 237 245 / 0.1);
-  color: var(--instr); font-size: 0.8rem; letter-spacing: 0.12em;
+  padding: 0.75rem 0.95rem 0.6rem; border-bottom: 1px solid rgb(232 237 245 / 0.1);
+  color: var(--instr); font-size: 0.78rem; letter-spacing: 0.12em;
   text-shadow: 0 0 0.6em rgb(127 211 255 / 0.4);
 }
-.panelset__count { font-size: 0.68rem; color: rgb(232 237 245 / 0.55); letter-spacing: 0.1em; }
-.panelset ul { list-style: none; margin: 0; padding: 0.35rem 0 0; display: grid; }
-.panelset li {
-  display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 0.85rem;
-  padding: 0.42rem 1rem; font-size: var(--t-small); color: rgb(232 237 245 / 0.88);
-  border-bottom: 1px solid rgb(232 237 245 / 0.05);
+.sys__n { font-size: 0.7rem; color: rgb(232 237 245 / 0.5); letter-spacing: 0.1em; }
+/* the bus: one line down the card, each item branching off it at a node */
+.sys ul { position: relative; list-style: none; margin: 0.5rem 0 0; padding: 0 0.95rem 0 2.1rem; }
+.sys ul::before {
+  content: ''; position: absolute; left: 1.1rem; top: 0.45rem; bottom: 0.45rem; width: 1px;
+  background: linear-gradient(180deg, var(--instr), rgb(127 211 255 / 0.12)); opacity: 0.55;
 }
-.panelset li:last-child { border-bottom: 0; }
-/* the toggle: a short track with the knob thrown up — ON */
-.sw {
-  position: relative; display: block; width: 12px; height: 22px; border-radius: 3px;
-  background: #070b1a; box-shadow: inset 0 1px 0 rgb(232 237 245 / 0.08), 0 0 0 1px rgb(232 237 245 / 0.14);
+.sys li { position: relative; padding: 0.34rem 0; font-size: var(--t-small); color: rgb(232 237 245 / 0.86); transition: color 0.25s; }
+.sys li::before { content: ''; position: absolute; left: -1rem; top: 50%; width: 0.62rem; height: 1px; background: rgb(127 211 255 / 0.45); }
+.sys li::after {
+  content: ''; position: absolute; left: -1rem; top: 50%; width: 5px; height: 5px; translate: -50% -50%; rotate: 45deg;
+  background: var(--instr); box-shadow: 0 0 6px rgb(127 211 255 / 0.55);
+  transition: scale 0.3s var(--ease-out);
 }
-.sw::before {
-  content: ''; position: absolute; left: 2px; right: 2px; top: 2px; height: 9px; border-radius: 2px;
-  background: linear-gradient(180deg, var(--ink-light), #b9c3d3);
-  transition: translate 0.25s var(--ease-out);
-}
-.led { width: 6px; height: 6px; border-radius: 50%; background: var(--instr); box-shadow: 0 0 6px var(--instr); transition: box-shadow 0.3s; }
-.panelset li:hover { color: var(--ink-light); }
-.panelset li:hover .sw::before { translate: 0 -1px; }
-.panelset li:hover .led { box-shadow: 0 0 12px var(--instr), 0 0 2px var(--ink-light); }
+.sys li:hover { color: var(--ink-light); }
+.sys li:hover::after { scale: 1.6; }
 
-/* ─── reveals: entries, toolkit panels and slips fade up once as they arrive (flight.ts adds .is-in) ─── */
-.js .entry, .js .panelset, .js .slip { opacity: 0; translate: 0 1.25rem; }
+/* ─── reveals: entries, systems cards and slips fade up once as they arrive (flight.ts adds .is-in) ─── */
+.js .entry, .js .sys, .js .slip { opacity: 0; translate: 0 1.25rem; }
 .js .entry, .js .slip { transition: opacity 0.8s var(--ease-out), translate 0.8s var(--ease-out); }
-.js .entry.is-in, .js .panelset.is-in, .js .slip.is-in { opacity: 1; translate: 0 0; }
+.js .entry.is-in, .js .sys.is-in, .js .slip.is-in { opacity: 1; translate: 0 0; }
 .odo__strip { transition-duration: 0.7s; }
 
 /* ─── flight log ↔ route map ─── */
@@ -388,7 +401,19 @@ html:not(.js) .deck__route-line { stroke-dashoffset: 0; }
 @media (hover: none) {
   .film::after { animation: none; }
   .hdr::after, .readout::after { animation: none; }
-  .readout { -webkit-backdrop-filter: blur(14px) saturate(170%); backdrop-filter: blur(14px) saturate(170%); }
+  /* a lighter blur than the desktop pane, but it must keep dimming — this rule replaces the
+     filter entirely, and without the brightness step the bar is unreadable over a pale sky */
+  .readout {
+    -webkit-backdrop-filter: blur(14px) saturate(170%) brightness(calc(0.66 - 0.26 * var(--pale)));
+    backdrop-filter: blur(14px) saturate(170%) brightness(calc(0.66 - 0.26 * var(--pale)));
+  }
+  /* four more blurred panes is the one thing phones can't afford — measured +90 ms blocking
+     time. The chrome keeps its glass; the systems cards take a flat fill instead. */
+  .sys {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    background: rgb(11 18 38 / 0.86);
+  }
 }
 @media (prefers-reduced-motion: reduce) {
   .shock { display: none; }

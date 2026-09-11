@@ -89,16 +89,16 @@ const otherLinks = profileLinks.filter((l) => l !== links.resume && l !== contac
         <div><dt>Education</dt><dd>{edu.degree}, {edu.school} · {edu.start}–{edu.end}{edu.note && ` · ${edu.note}`}</dd></div>
       </dl>
 
-      <p class="eyebrow" style="margin-top: 5rem">Overhead panel · all systems on</p>
+      <p class="eyebrow" style="margin-top: 5rem">Systems display</p>
       <h2 class="leg__title" data-reveal>Toolkit</h2>
-      <div class="overhead">
+      <div class="systems">
         {
           toolkit.map((g) => (
-            <section class="panelset" aria-label={g.label}>
-              <h3><span>{g.label}</span><span class="panelset__count mono">{g.items.length} on</span></h3>
+            <section class="sys" aria-label={g.label}>
+              <h3><span>{g.label}</span><span class="sys__n mono">{String(g.items.length).padStart(2, '0')}</span></h3>
               <ul>
                 {g.items.map((item) => (
-                  <li><i class="sw" aria-hidden="true"></i><span>{item}</span><b class="led" aria-hidden="true"></b></li>
+                  <li>{item}</li>
                 ))}
               </ul>
             </section>

@@ -89,6 +89,8 @@ main { position: relative; z-index: 1; }
   --scr-x: 492; --scr-y: 652; --scr-w: 456; --scr-h: 200; --scr-pad: 34; --pitch-fs: 25;
   --sw: max(100cqw, 100cqh * var(--W) / var(--H));
   --sh: max(100cqh, 100cqw * var(--H) / var(--W));
+  /* registered (strato-base.css) so it computes once per resize instead of re-resolving the
+     container-query maths in every calc() that reads it — Style & Layout was the top cost */
   --u: calc(var(--sw) / var(--W));
   position: absolute; left: calc(50cqw - var(--sw) / 2); top: calc(100cqh - var(--sh));
   width: var(--sw); height: var(--sh);

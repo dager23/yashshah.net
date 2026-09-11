@@ -317,7 +317,7 @@ function passTilt(): void {
 
 /* ─── fade-up reveals: log entries, toolkit panels and slips arrive once (strato-live.css) ─── */
 function fadeUps(): void {
-  document.querySelectorAll<HTMLElement>('.entry, .panelset, .slip').forEach((el, i) => {
+  document.querySelectorAll<HTMLElement>('.entry, .sys, .slip').forEach((el, i) => {
     if (reduced) { el.classList.add('is-in'); return; }
     ScrollTrigger.create({
       trigger: el, start: 'top 90%', once: true,
