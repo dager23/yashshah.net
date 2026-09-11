@@ -1,15 +1,22 @@
 /* ─── Stratosphere — sections ───────────────────────────────────────────── */
 
 /* header: always on dark glass so it reads over every sky */
+/* liquid glass: a floating capsule with specular edges. Still dense enough for ≥ 4.5:1
+   over the pale dawn sky (6.3:1 where the sky is lightest). */
 .hdr {
-  position: fixed; inset: 0 0 auto; z-index: 40;
+  position: fixed; inset: 0.55rem var(--pad-x) auto; z-index: 40;
   display: flex; align-items: center; justify-content: space-between; gap: 1rem;
-  padding: 0.85rem var(--pad-x);
+  padding: 0.6rem clamp(0.9rem, 2.5vw, 1.4rem);
   color: var(--ink-light);
-  background: rgb(7 11 26 / 0.8); /* dense enough for ≥ 4.5:1 over the pale dawn sky */
-  -webkit-backdrop-filter: blur(14px) saturate(140%);
-  backdrop-filter: blur(14px) saturate(140%);
-  border-bottom: 1px solid rgb(232 237 245 / 0.12);
+  background: linear-gradient(180deg, rgb(27 42 78 / 0.78), rgb(7 11 26 / 0.86));
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgb(232 237 245 / 0.14);
+  border-radius: 999px;
+  box-shadow:
+    inset 0 1px 0 rgb(232 237 245 / 0.3),
+    inset 0 -10px 22px -14px rgb(127 211 255 / 0.55),
+    0 12px 32px -14px rgb(7 11 26 / 0.85);
 }
 .hdr__id { text-decoration: none; display: flex; gap: 0.75em; align-items: center; }
 .hdr__id b { color: var(--amber); font-weight: 600; }
@@ -18,14 +25,16 @@
 .hdr nav a:hover, .hdr nav a[aria-current] { color: var(--ink-light); }
 
 /* ─── readout (fixed instrument, doubles as progress) ─── */
+/* the readout is the other piece of liquid glass: rounded, blurred, specular top edge */
 .readout {
   position: fixed; right: var(--pad-x); bottom: 1.5rem; z-index: 30;
   width: 15.5rem; padding: 0.9rem 1rem 0.8rem;
   color: var(--ink-light);
-  background: rgb(7 11 26 / 0.82);
-  -webkit-backdrop-filter: blur(12px);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgb(232 237 245 / 0.12);
+  background: linear-gradient(180deg, rgb(27 42 78 / 0.74), rgb(7 11 26 / 0.86));
+  -webkit-backdrop-filter: blur(18px) saturate(170%);
+  backdrop-filter: blur(18px) saturate(170%);
+  border: 1px solid rgb(232 237 245 / 0.14);
+  border-radius: 14px;
 }
 .readout dl { display: grid; grid-template-columns: auto 1fr; gap: 0.35rem 1rem; align-items: baseline; }
 .readout dt { color: rgb(232 237 245 / 0.74); }
@@ -36,11 +45,14 @@
 .readout.is-stowed { opacity: 0; translate: 0 0.75rem; }
 html:not(.js) .readout { display: none; } /* it only moves with JS */
 
-/* instruments share the flight deck's hardware: display-unit bezel + HUD glow */
-:root { --bezel: 0 0 0 0.4rem var(--ink-dark), 0 0 0 calc(0.4rem + 1px) rgb(232 237 245 / 0.12); }
-.panel, .routemap { box-shadow: var(--bezel); }
+/* instruments share the flight deck's hardware: display bezel, specular edge, HUD glow */
+:root {
+  --bezel: 0 0 0 0.4rem var(--ink-dark), 0 0 0 calc(0.4rem + 1px) rgb(232 237 245 / 0.12);
+  --specular: inset 0 1px 0 rgb(232 237 245 / 0.26);
+}
+.panel, .routemap { box-shadow: var(--bezel), var(--specular); }
 .panel__hdr b, .readout dd:not(.is-amber) { text-shadow: 0 0 0.6em rgb(127 211 255 / 0.45); }
-@media (min-width: 768px) { .readout { box-shadow: var(--bezel); } }
+@media (min-width: 768px) { .readout { box-shadow: var(--bezel), var(--specular); } }
 .readout__bar { position: relative; margin-top: 0.75rem; }
 .readout__fill {
   position: absolute; left: 0; bottom: 0; height: 2px; width: 100%;
@@ -138,9 +150,9 @@ main { position: relative; z-index: 1; }
 .panel {
   width: min(38rem, 100%); padding: clamp(1.25rem, 2.5vw, 2rem);
   color: var(--ink-light);
-  background: rgb(7 11 26 / 0.6);
-  -webkit-backdrop-filter: blur(16px) saturate(130%);
-  backdrop-filter: blur(16px) saturate(130%);
+  background: linear-gradient(180deg, rgb(27 42 78 / 0.62), rgb(7 11 26 / 0.68));
+  -webkit-backdrop-filter: blur(18px) saturate(165%);
+  backdrop-filter: blur(18px) saturate(165%);
   transition: transform 0.9s var(--ease-out), opacity 0.9s var(--ease-out);
 }
 .js .panel:not(.is-docked) { transform: translateX(3rem); opacity: 0; }
@@ -234,12 +246,13 @@ main { position: relative; z-index: 1; }
 /* ─── narrow screens: readout becomes a slim bar, path runs down one side ─── */
 @media (max-width: 767px) {
   .hdr nav a:not(.keep) { display: none; }
+  /* under the floating header, as its own glass capsule */
   .readout {
-    inset: 3.35rem 0 auto; width: auto; padding: 0.45rem var(--pad-x);
-    border-width: 0 0 1px;
+    inset: 3.6rem var(--pad-x) auto; width: auto; padding: 0.45rem 0.9rem;
+    border-radius: 999px; box-shadow: var(--specular);
   }
   .readout dl { grid-template-columns: repeat(3, auto 1fr); gap: 0 0.5rem; }
-  .readout__bar { position: absolute; left: 0; right: 0; bottom: -1px; margin: 0; height: 2px; }
+  .readout__bar { position: absolute; left: 0.9rem; right: 0.9rem; bottom: 0.3rem; margin: 0; height: 2px; }
   .readout__bar .ticks { display: none; }
   .leg__col { width: min(100%, calc(100% - 2.5rem)); }
   .facts div, .entry { grid-template-columns: 1fr; }

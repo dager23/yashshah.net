@@ -73,7 +73,8 @@ export function startScene(canvas: HTMLCanvasElement): boolean {
   const reduced = getState().reduced;
 
   const renderer = new WebGLRenderer({ canvas, alpha: true, antialias: !mobile, powerPreference: 'high-performance' });
-  renderer.setPixelRatio(Math.min(devicePixelRatio || 1, mobile ? 1.5 : 2));
+  // phones were capped at 1.5 and the Earth read as mush; the scene is one sphere and two sprites
+  renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
   renderer.setClearColor(0x000000, 0);
   renderer.outputColorSpace = SRGBColorSpace;
   renderer.toneMapping = ACESFilmicToneMapping;
@@ -92,8 +93,10 @@ export function startScene(canvas: HTMLCanvasElement): boolean {
   /* ── Earth + atmosphere ── */
   const earth = new Group();
   const earthMat = new MeshStandardMaterial({ roughness: 0.95, metalness: 0, envMapIntensity: 0.15, color: 0x8a96a8 });
-  new TextureLoader().load(mobile ? '/textures/earth-1k.webp' : '/textures/earth-2k.webp', (t) => {
+  new TextureLoader().load(mobile ? '/textures/earth-3k.webp' : '/textures/earth-4k.webp', (t) => {
     t.colorSpace = SRGBColorSpace;
+    // the limb is always seen at a grazing angle; without anisotropy it blurs to mush
+    t.anisotropy = renderer.capabilities.getMaxAnisotropy();
     earthMat.map = t;
     earthMat.color.set(0xffffff);
     earthMat.needsUpdate = true;

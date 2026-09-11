@@ -21,6 +21,7 @@
   --dawn-top: #dde6ee;
   --dawn-bot: #7fa8cc;
   --cruise-top: #1b2a4e;
+  --cruise-hi: #2a3f6b; /* lighter zenith: the long cruise stretch shouldn't read as flat near-black */
   --cruise-bot: #070b1a;
   --dusk-top: #3a2140;
   --dusk-bot: #f2a36b;
@@ -135,7 +136,14 @@ a { color: inherit; }
 .sky > i { position: absolute; inset: 0; opacity: 0; will-change: opacity; z-index: 1; }
 .sky > .sky__cruise { z-index: 0; } /* cruise is the base; dawn and dusk fade in over it */
 .sky__dawn { background: linear-gradient(180deg, var(--dawn-top), var(--dawn-bot)); }
-.sky__cruise { background: linear-gradient(180deg, var(--cruise-top), var(--cruise-bot)); opacity: 1 !important; }
+/* lighter zenith plus a cyan atmosphere glow along the horizon, so the long cruise
+   stretch has depth instead of reading as flat navy */
+.sky__cruise {
+  background:
+    radial-gradient(135% 55% at 50% 100%, rgb(127 211 255 / 0.13), transparent 60%),
+    linear-gradient(180deg, var(--cruise-hi) 0%, var(--cruise-top) 48%, var(--cruise-bot) 100%);
+  opacity: 1 !important;
+}
 /* dusk: purple zenith, orange only at the horizon so light ink keeps ≥ 4.5:1 over the text band */
 .sky__dusk { background: linear-gradient(180deg, var(--dusk-top) 0%, var(--dusk-top) 80%, var(--dusk-bot) 100%); }
 .js .sky__dawn { opacity: 1; }

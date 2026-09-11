@@ -26,7 +26,7 @@ Searched with no Concorde found: Poly Pizza, Smithsonian Open Access (3d.si.edu)
 
 | Asset | Source | Author | Licence | Derived files |
 | --- | --- | --- | --- | --- |
-| Blue Marble: Next Generation w/ Topography and Bathymetry, December 2004 — `world.topo.bathy.200412.3x5400x2700.jpg` (2.45 MB) | <https://science.nasa.gov/earth/earth-observatory/blue-marble-next-generation/base-topography-bathymetry> | Reto Stöckli, NASA Earth Observatory | Public domain (NASA) | `public/textures/earth-2k.webp`, `earth-1k.webp`, `route-region.webp` (crop lon −15…145, lat 65…−5, darkened) |
+| Blue Marble: Next Generation w/ Topography and Bathymetry, December 2004 — `world.topo.bathy.200412.3x5400x2700.jpg` (2.45 MB) | <https://science.nasa.gov/earth/earth-observatory/blue-marble-next-generation/base-topography-bathymetry> | Reto Stöckli, NASA Earth Observatory | Public domain (NASA) | `public/textures/earth-4k.webp`, `earth-3k.webp`, `route-region.webp` (crop lon −15…145, lat 65…−5, darkened) |
 
 The original is kept out of git in `assets-src/earth/`; re-fetch it from the URL above.
 

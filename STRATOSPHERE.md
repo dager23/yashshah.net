@@ -8,7 +8,7 @@ the alternative. All content comes unchanged from `src/data/*` and `src/content/
 
 | Phase | Section | What happens |
 | --- | --- | --- |
-| Gate / takeoff | hero `#gate` | the flight deck at dawn: name on the HUD, pitch on the centre display; scrolling pushes through the windscreen into the sky, and the readout undocks as the cockpit clears |
+| Gate / takeoff | hero `#gate` | the flight deck at dawn: full-bleed windscreen (no frame), name on the HUD, pitch on the centre display; scrolling pushes through into the sky, and the readout undocks as the cockpit clears |
 | Climb | `#about` (about + toolkit) | sky cross-fades to cruise; toolkit as instrument gauges |
 | Mach 1 | entering `#waypoints` | one vapour ring; readout flashes amber |
 | Cruise | `#waypoints` | Earth limb + stars; each project docks in as a display unit (EFMIX → URBST → VIDGP → DCATH) |

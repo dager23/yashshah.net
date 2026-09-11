@@ -1,8 +1,9 @@
 ---
 /**
- * Gate hero: the view from the flight deck at dawn. The name sits on the HUD, the pitch on
- * the centre display. Two drawings share one stage — wide (1440×900) and tall (390×844) —
- * scaled to cover the viewport; flight.ts scrubs the push through the windscreen.
+ * Gate hero: the view from the flight deck at dawn — windscreen full-bleed down to the
+ * glareshield. The name sits on the HUD, the pitch on the centre display. Two drawings
+ * share one stage — wide (1440×900) and tall (390×844) — scaled to cover the viewport;
+ * flight.ts scrubs the push through the windscreen.
  * Instrument values are the readout's gate state; nothing else on the panel makes a claim.
  */
 interface Props {
@@ -64,7 +65,6 @@ const tallSym = `<g stroke="#7fd3ff" stroke-width="1.4" fill="none" opacity=".85
 /* ─── cockpit hardware ─── */
 function defs(p: string): string {
   return `<defs>
-<linearGradient id="${p}-frame" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#070b1a"/><stop offset="1" stop-color="#0b1020"/></linearGradient>
 <linearGradient id="${p}-top" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1b2a4e"/><stop offset="1" stop-color="#0b1020"/></linearGradient>
 <linearGradient id="${p}-shade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#070b1a" stop-opacity=".85"/><stop offset="1" stop-color="#070b1a" stop-opacity="0"/></linearGradient>
 <linearGradient id="${p}-glass" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e8edf5" stop-opacity=".08"/><stop offset=".4" stop-color="#e8edf5" stop-opacity="0"/></linearGradient>
@@ -137,7 +137,6 @@ function standby(cx: number, cy: number, r: number): string {
 
 /* ─── wide stage (1440 × 900) ─── */
 const W = 'dkw';
-const panesW = 'M 300 128 Q 720 92 1140 128 L 1116 548 L 324 548 Z M 40 214 L 262 142 L 290 548 L 70 548 Z M 1400 214 L 1178 142 L 1150 548 L 1370 548 Z';
 const lbl = (x: number, t: string) => `<text x="${x}" y="588.5" font-size="8" fill="rgba(232,237,245,.62)">${t}</text>`;
 const win = (x: number, w: number, t: string, color: string, mid = false) =>
   `<rect x="${x}" y="592" width="${w}" height="22" rx="2" fill="#070b1a" stroke="rgba(232,237,245,.1)"/><text x="${mid ? x + w / 2 : x + w - 8}" y="607.5" font-size="${mid ? 11 : 12.5}" fill="${color}" text-anchor="${mid ? 'middle' : 'end'}">${t}</text>`;
@@ -149,9 +148,6 @@ const caution = (x: number) =>
 
 const wideView = view(W, 1440, 900, 330, 720, 640, 250, 20);
 const wideFrame = `${defs(W)}
-<path d="M 0 0 H 1440 V 572 H 0 Z ${panesW}" fill="url(#${W}-frame)" fill-rule="evenodd"/>
-<path d="${panesW}" fill="none" stroke="#070b1a" stroke-width="8"/>
-<path d="${panesW}" fill="none" stroke="rgba(232,237,245,.16)" stroke-width="1.5"/>
 ${wiper(430, 548, 612, 520)}${wiper(1010, 548, 828, 520)}
 <rect y="560" width="1440" height="340" fill="#0b1020"/><rect y="560" width="1440" height="340" fill="#1b2a4e" opacity=".42"/>
 <g stroke="#070b1a" stroke-width="2"><line x1="478" y1="600" x2="478" y2="900"/><line x1="962" y1="600" x2="962" y2="900"/><line x1="0" y1="868" x2="1440" y2="868"/></g>
@@ -178,14 +174,10 @@ ${efis(96)}${caution(316)}${efis(1140)}${caution(1094)}`;
 
 /* ─── tall stage (390 × 844) ─── */
 const T = 'dkt';
-const paneT = 'M 18 106 Q 195 88 372 106 L 360 452 L 30 452 Z';
 const winT = (x: number, w: number, t: string, color: string, mid = false) =>
   `<rect x="${x}" y="477" width="${w}" height="16" rx="2" fill="#070b1a" stroke="rgba(232,237,245,.1)"/><text x="${mid ? x + w / 2 : x + w - 6}" y="488.5" font-size="${mid ? 8.5 : 10}" fill="${color}" text-anchor="${mid ? 'middle' : 'end'}">${t}</text>`;
 const tallView = view(T, 390, 844, 262, 195, 520, 92, 16);
 const tallFrame = `${defs(T)}
-<path d="M 0 0 H 390 V 470 H 0 Z ${paneT}" fill="url(#${T}-frame)" fill-rule="evenodd"/>
-<path d="${paneT}" fill="none" stroke="#070b1a" stroke-width="6"/>
-<path d="${paneT}" fill="none" stroke="rgba(232,237,245,.16)" stroke-width="1.2"/>
 ${wiper(96, 452, 214, 434)}
 <rect y="462" width="390" height="382" fill="#0b1020"/><rect y="462" width="390" height="382" fill="#1b2a4e" opacity=".42"/>
 ${du(30, 530, 330, 184, 8, T, '')}
