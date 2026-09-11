@@ -82,3 +82,9 @@ Drop a new PDF at `public/resume.pdf`. No code change.
 ## Deploy
 
 Push to `main`. Vercel auto-builds. Astro is auto-detected — no config needed.
+
+## License
+
+Code is [MIT](LICENSE). That covers the Astro setup, components, and styling —
+not the personal content: Yash Shah's name, bio, résumé, case-study write-ups,
+and likeness aren't yours to reuse just because the code is open.
