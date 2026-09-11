@@ -54,6 +54,15 @@ main { position: relative; z-index: 1; }
 
 /* ─── gate / hero ─── */
 .gate { min-height: 100svh; display: grid; align-content: end; padding-top: 7rem; padding-bottom: clamp(3rem, 12vh, 7rem); }
+/* the gate's text sits on a frosted dawn panel: a real background, so it stays
+   readable even if the fixed sky layer fails to paint */
+.gate .leg__col {
+  width: min(46rem, 100%);
+  padding: clamp(1.25rem, 3vw, 2.25rem);
+  background: rgb(221 230 238 / 0.9);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
 .flap-board { display: flex; flex-wrap: wrap; gap: 0.08em; font-size: var(--t-hero); margin-top: 1.25rem; }
 .flap-word { display: flex; gap: 0.06em; margin-right: 0.28em; }
 .flap {

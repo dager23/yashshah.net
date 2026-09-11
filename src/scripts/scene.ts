@@ -6,12 +6,11 @@
  * GLB is placed in public/models/ — set MODEL_URL to wire it in.
  */
 import {
-  AdditiveBlending, BackSide, BufferGeometry, CanvasTexture, CatmullRomCurve3, Color, DirectionalLight,
+  AdditiveBlending, BackSide, Box3, BufferGeometry, CanvasTexture, CatmullRomCurve3, Color, DirectionalLight,
   Float32BufferAttribute, Group, Line, LineBasicMaterial, LineDashedMaterial, Mesh, MeshStandardMaterial,
   PerspectiveCamera, PMREMGenerator, Points, PointsMaterial, Scene, ShaderMaterial, SphereGeometry, Sprite,
   SpriteMaterial, SRGBColorSpace, TextureLoader, Vector3, WebGLRenderer, ACESFilmicToneMapping,
 } from 'three';
-import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { DESKTOP, MOBILE, isNarrow } from './path';
 import { getState, subscribe } from './store';
 
@@ -82,7 +81,7 @@ export function startScene(canvas: HTMLCanvasElement): boolean {
   const scene = new Scene();
   const camera = new PerspectiveCamera(35, 1, 0.1, 4000);
   camera.position.set(0, 0, 30);
-  scene.environment = new PMREMGenerator(renderer).fromScene(new RoomEnvironment(), 0.04).texture;
+  // environment map is built only when the model loads — nothing else needs it
 
   const sun = new DirectionalLight(0xffffff, 2.2);
   sun.position.set(-20, 30, 25);
@@ -171,8 +170,37 @@ export function startScene(canvas: HTMLCanvasElement): boolean {
     (o.material as { depthTest: boolean }).depthTest = false;
     o.renderOrder = 10;
   }
+  // Sourced Concorde (see CREDITS.md). Loaded on demand so GLTFLoader costs nothing until the file exists.
+  let model: Group | null = null;
   if (MODEL_URL) {
-    // wired once the GLB exists: GLTFLoader + MeshoptDecoder, swap out `marker`
+    const url = MODEL_URL;
+    Promise.all([
+      import('three/addons/loaders/GLTFLoader.js'),
+      import('three/addons/libs/meshopt_decoder.module.js'),
+      import('three/addons/environments/RoomEnvironment.js'),
+    ])
+      .then(([{ GLTFLoader }, { MeshoptDecoder }, { RoomEnvironment }]) => {
+        // lights the satin white paint (stand-in for the declined Poly Haven HDRI)
+        scene.environment = new PMREMGenerator(renderer).fromScene(new RoomEnvironment(), 0.04).texture;
+        return new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).loadAsync(url);
+      })
+      .then((gltf) => {
+        const m = gltf.scene;
+        const box = new Box3().setFromObject(m);
+        const size = box.getSize(new Vector3());
+        m.scale.setScalar(2.6 / Math.max(size.x, size.y, size.z)); // wingtip-to-nose fits ~2.6 units
+        box.setFromObject(m);
+        m.position.sub(box.getCenter(new Vector3()));
+        const holder = new Group();
+        holder.add(m);
+        // Nose axis and the droop-nose mesh are calibrated once the real file is inspected.
+        rig.add(holder);
+        model = holder;
+        marker.visible = false;
+        dirty = true;
+        kick();
+      })
+      .catch((e) => console.warn('Concorde model unavailable — keeping the flight-path marker', e));
   }
 
   /* ── state → scene ── */
@@ -207,6 +235,7 @@ export function startScene(canvas: HTMLCanvasElement): boolean {
     const bankTarget = Math.max(-0.5, Math.min(0.5, (turn / Math.max(dt, 1e-3)) * 0.35));
     bank += (bankTarget - bank) * (1 - Math.exp(-dt * 3));
     marker.material.rotation = -bank;
+    if (model) model.rotation.set(bank, 0, heading); // nose along the route, rolled into the turn
 
     // flown leg behind the plane; only the next stretch of the plan ahead of it
     const idx = Math.round(u * 240);

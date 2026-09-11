@@ -66,7 +66,7 @@ const edu = education[0];
 <Strato path="/">
   <!-- 1 · GATE / TAKEOFF ─────────────────────────────────────────── -->
   <section class="leg gate phase-dawn" data-leg="gate" id="gate" aria-labelledby="hero-name">
-    <div class="leg__col">
+    <div class="leg__col brackets">
       <p class="eyebrow">Gate 01 · Ready for departure</p>
       <h1 id="hero-name" class="flap-board" data-flap aria-label={site.name}>
         {
@@ -81,7 +81,7 @@ const edu = education[0];
       </h1>
       <div class="gate__meta">
         <p class="gate__role mono">{site.role} · {site.location}</p>
-        <p class="gate__pitch" data-reveal>{site.intro[1]}</p>
+        <p class="gate__pitch">{site.intro[1]}</p>
         <div class="gate__ctas">
           <a class="btn btn--primary" href="#waypoints">Projects <Fragment set:html={arrowDown} /></a>
           <a class="btn" href={links.resume.href}>Résumé <Fragment set:html={arrowUpRight} /></a>

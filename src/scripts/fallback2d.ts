@@ -31,14 +31,16 @@ function route(pts: Pt[], w: number, h: number, n = 240): Pt[] {
   return out;
 }
 
-export function startFallback(): void {
+/** Starts the 2D route; returns a stop function (used when WebGL takes over). */
+export function startFallback(): () => void {
   const el = document.createElement('div');
   el.className = 'fallback-plane';
   el.innerHTML = MARKER;
   document.body.appendChild(el);
 
   let pts = route(isNarrow() ? MOBILE : DESKTOP, innerWidth, innerHeight);
-  addEventListener('resize', () => { pts = route(isNarrow() ? MOBILE : DESKTOP, innerWidth, innerHeight); draw(getState().u); });
+  const onResize = () => { pts = route(isNarrow() ? MOBILE : DESKTOP, innerWidth, innerHeight); draw(getState().u); };
+  addEventListener('resize', onResize);
 
   function draw(u: number): void {
     const i = Math.min(pts.length - 1, Math.max(0, Math.round(u * (pts.length - 1))));
@@ -48,5 +50,10 @@ export function startFallback(): void {
     const bank = Math.max(-0.4, Math.min(0.4, Math.sin(heading) * 0.35));
     el.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) rotate(${bank.toFixed(3)}rad)`;
   }
-  subscribe((s) => draw(s.u));
+  const unsubscribe = subscribe((s) => draw(s.u));
+  return () => {
+    unsubscribe();
+    removeEventListener('resize', onResize);
+    el.remove();
+  };
 }

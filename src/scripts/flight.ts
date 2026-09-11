@@ -178,6 +178,7 @@ function reveals(): void {
     SplitText.create(el, {
       type: 'lines',
       mask: 'lines',
+      aria: 'none', // no aria-label on <p> (prohibited); the split text keeps its reading order
       autoSplit: true,
       onSplit: (self) =>
         gsap.from(self.lines, {
@@ -234,15 +235,20 @@ function requestScene(): void {
   const canvas = document.getElementById('scene') as HTMLCanvasElement | null;
   if (!canvas) return;
   sceneRequested = true;
-  const fallback = () => import('./fallback2d').then((f) => f.startFallback());
-  const go = () =>
+  // Poster: the 0.9 KB 2D route marker flies at once. WebGL takes over on the first
+  // interaction, so the three.js boot never competes with the hero's first paint.
+  const poster = import('./fallback2d').then((f) => f.startFallback());
+  const EVENTS = ['pointerdown', 'wheel', 'touchstart', 'keydown', 'scroll'] as const;
+  let started = false;
+  const go = () => {
+    if (started) return;
+    started = true;
+    EVENTS.forEach((ev) => removeEventListener(ev, go));
     import('./scene')
-      .then((m) => (m.startScene(canvas) ? undefined : fallback()))
-      .catch((e) => { console.warn('scene unavailable, using 2D route', e); return fallback(); });
-  const idle: (cb: () => void) => void =
-    'requestIdleCallback' in window ? (cb) => window.requestIdleCallback(cb, { timeout: 1500 }) : (cb) => setTimeout(cb, 400);
-  if (document.readyState === 'complete') idle(go);
-  else addEventListener('load', () => idle(go), { once: true });
+      .then((m) => { if (m.startScene(canvas)) poster.then((stop) => stop()); }) // no WebGL: the poster keeps flying
+      .catch((e) => console.warn('WebGL scene unavailable — staying on the 2D route', e));
+  };
+  EVENTS.forEach((ev) => addEventListener(ev, go, { passive: true }));
 }
 
 function initPage(): void {
