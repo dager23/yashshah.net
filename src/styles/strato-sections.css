@@ -31,6 +31,16 @@
 .readout dt { color: rgb(232 237 245 / 0.74); }
 .readout dd { text-align: right; color: var(--instr); }
 .readout dd.is-amber { color: var(--amber); }
+/* stowed while the flight deck is on screen — its autopilot panel shows the same values */
+.readout { transition: opacity 0.4s var(--ease-out), translate 0.4s var(--ease-out); }
+.readout.is-stowed { opacity: 0; translate: 0 0.75rem; }
+html:not(.js) .readout { display: none; } /* it only moves with JS */
+
+/* instruments share the flight deck's hardware: display-unit bezel + HUD glow */
+:root { --bezel: 0 0 0 0.4rem var(--ink-dark), 0 0 0 calc(0.4rem + 1px) rgb(232 237 245 / 0.12); }
+.panel, .routemap { box-shadow: var(--bezel); }
+.panel__hdr b, .readout dd:not(.is-amber) { text-shadow: 0 0 0.6em rgb(127 211 255 / 0.45); }
+@media (min-width: 768px) { .readout { box-shadow: var(--bezel); } }
 .readout__bar { position: relative; margin-top: 0.75rem; }
 .readout__fill {
   position: absolute; left: 0; bottom: 0; height: 2px; width: 100%;
@@ -42,7 +52,8 @@
 
 /* ─── legs (sections) ─── */
 main { position: relative; z-index: 1; }
-.leg { position: relative; padding: clamp(6rem, 18vh, 12rem) var(--pad-x); }
+/* x-clip: panels slide in from 3rem right before docking; they must not widen the page on phones */
+.leg { position: relative; padding: clamp(6rem, 18vh, 12rem) var(--pad-x); overflow-x: clip; }
 .leg__col { width: var(--col); color: var(--ink); }
 .leg__title {
   margin-top: 1rem;
@@ -52,35 +63,56 @@ main { position: relative; z-index: 1; }
 .leg__lead { margin-top: 1.5rem; font-size: var(--t-lead); line-height: 1.4; color: var(--ink-2); max-width: 34ch; }
 .spacer { height: 80vh; }
 
-/* ─── gate / hero ─── */
-.gate { min-height: 100svh; display: grid; align-content: end; padding-top: 7rem; padding-bottom: clamp(3rem, 12vh, 7rem); }
-/* the gate's text sits on a frosted dawn panel: a real background, so it stays
-   readable even if the fixed sky layer fails to paint */
-.gate .leg__col {
-  width: min(46rem, 100%);
-  padding: clamp(1.25rem, 3vw, 2.25rem);
-  background: rgb(221 230 238 / 0.9);
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
+/* ─── gate / hero: the flight deck at dawn ─── */
+/* One stage holds the cockpit drawing (wide 1440×900, or tall 390×844 on portrait phones),
+   scaled to cover the viewport and anchored to the panel; --u is one drawing unit in px.
+   The clip runs a viewport below the gate so the push-through (flight.ts) can hold the
+   stage still while the page scrolls. */
+/* no background of its own: the stage is opaque, and once it fades the dawn sky must show */
+.deck { height: 100svh; min-height: 30rem; padding: 0; container-type: size; }
+.deck__clip { position: absolute; inset: 0 0 -100%; overflow: hidden; pointer-events: none; }
+.deck__stage {
+  --W: 1440; --H: 900; --fpm-y: 36.667%;
+  --name-y: 366; --name-fs: 100;
+  --scr-x: 492; --scr-y: 652; --scr-w: 456; --scr-h: 200; --scr-pad: 34; --pitch-fs: 25;
+  --sw: max(100cqw, 100cqh * var(--W) / var(--H));
+  --sh: max(100cqh, 100cqw * var(--H) / var(--W));
+  --u: calc(var(--sw) / var(--W));
+  position: absolute; left: calc(50cqw - var(--sw) / 2); top: calc(100cqh - var(--sh));
+  width: var(--sw); height: var(--sh);
 }
-.flap-board { display: flex; flex-wrap: wrap; gap: 0.08em; font-size: var(--t-hero); margin-top: 1.25rem; }
-.flap-word { display: flex; gap: 0.06em; margin-right: 0.28em; }
-.flap {
-  position: relative; display: inline-grid; place-items: center;
-  width: 0.74em; height: 1.08em; border-radius: 0.06em;
-  background: var(--ink-dark); color: var(--ink-light);
-  font-weight: 600; font-stretch: 125%; line-height: 1;
-  box-shadow: inset 0 -0.04em 0 rgb(0 0 0 / 0.4), 0 0.05em 0.12em rgb(11 16 32 / 0.25);
-  overflow: hidden;
+.deck__art, .deck__hud, .deck__art svg, .deck__sym { position: absolute; inset: 0; width: 100%; height: 100%; max-width: none; }
+.deck__art--tall, .deck__sym--tall { display: none; }
+.deck__view, .deck__frame { transform-origin: 50% var(--fpm-y); }
+.js .deck__view, .js .deck__frame { will-change: transform; }
+.deck__frame text { font-family: var(--font-mono); letter-spacing: 0.08em; }
+.deck__sym { overflow: visible; filter: drop-shadow(0 0 5px rgb(127 211 255 / 0.55)); }
+.deck__name {
+  position: absolute; left: 0; right: 0; top: calc(var(--u) * var(--name-y));
+  font-size: calc(var(--u) * var(--name-fs)); font-weight: 600; font-stretch: 125%;
+  line-height: 1.02; letter-spacing: 0.02em; text-align: center; text-transform: uppercase;
+  color: var(--instr);
+  text-shadow: 0 0 0.14em rgb(127 211 255 / 0.55), 0 0 0.02em rgb(127 211 255 / 0.9);
+  pointer-events: auto;
 }
-.flap::after { content: ''; position: absolute; left: 0; right: 0; top: 50%; height: 1px; background: rgb(0 0 0 / 0.55); }
-.flap { perspective: 400px; }
-.flap > span { display: block; transform-origin: 50% 50%; backface-visibility: hidden; will-change: transform; }
-.gate__meta { margin-top: 2rem; display: grid; gap: 1.25rem; max-width: 40rem; }
-.gate__role { color: var(--ink-2); }
-.gate__pitch { font-size: var(--t-lead); line-height: 1.35; }
-.gate__ctas { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 0.5rem; }
-/* runway sits 7vh above the fold — the scene's curve starts and ends on this line */
+/* HUD power-on flicker; never starts from 0 so the name still paints first (LCP) */
+.js .deck__name { animation: hud-on 1.4s var(--ease-out) both; }
+@keyframes hud-on { 0% { opacity: 0.3; } 25% { opacity: 1; } 32% { opacity: 0.45; } 100% { opacity: 1; } }
+.deck__screen {
+  position: absolute; left: calc(var(--u) * var(--scr-x)); top: calc(var(--u) * var(--scr-y));
+  width: calc(var(--u) * var(--scr-w)); height: calc(var(--u) * var(--scr-h));
+  padding: 0 calc(var(--u) * var(--scr-pad));
+  display: grid; align-content: center; pointer-events: auto;
+}
+.deck__pitch { font-size: calc(var(--u) * var(--pitch-fs)); line-height: 1.4; color: var(--ink-light); text-wrap: pretty; }
+@media (max-aspect-ratio: 7/10) {
+  .deck__stage { --W: 390; --H: 844; --fpm-y: 31.04%; --name-y: 290; --name-fs: 62; --scr-x: 30; --scr-y: 530; --scr-w: 330; --scr-h: 184; --scr-pad: 22; --pitch-fs: 19; }
+  .deck__art--wide, .deck__sym--wide { display: none; }
+  .deck__art--tall, .deck__sym--tall { display: block; }
+  .deck__name span { display: block; }
+}
+
+/* landing runway — the scene's curve ends on this line */
 .runway {
   --rw: var(--ink-dark);
   position: absolute; left: 0; right: 0; bottom: 7vh; height: 10px;

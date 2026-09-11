@@ -1,6 +1,7 @@
 ---
 import { getCollection } from 'astro:content';
 import Strato from '../layouts/Strato.astro';
+import FlightDeck from '../components/strato/FlightDeck.astro';
 import { site, links, profileLinks } from '../data/site';
 import { experience, type Role } from '../data/experience';
 import { achievements } from '../data/achievements';
@@ -8,7 +9,6 @@ import { education } from '../data/education';
 import { publications } from '../data/publications';
 import { toolkit } from '../data/toolkit';
 import { idents, route, mapWindow } from '../data/flightplan';
-import arrowDown from 'lucide-static/icons/arrow-down.svg?raw';
 import arrowUpRight from 'lucide-static/icons/arrow-up-right.svg?raw';
 import arrowRight from 'lucide-static/icons/arrow-right.svg?raw';
 
@@ -57,7 +57,6 @@ function arc(a: (typeof route)[number], b: (typeof route)[number], n = 48): stri
 const legs = route.slice(1).map((c, i) => arc(route[i], c));
 const cities = route.map((c) => ({ ...c, xy: project(c.lon, c.lat) }));
 
-const nameWords = site.name.toUpperCase().split(' ');
 const paper = publications.find((p) => p.kind === 'paper');
 const patent = publications.find((p) => p.kind === 'patent');
 const edu = education[0];
@@ -65,33 +64,9 @@ const edu = education[0];
 
 <Strato path="/">
   <!-- 1 · GATE / TAKEOFF ─────────────────────────────────────────── -->
-  <section class="leg gate phase-dawn" data-leg="gate" id="gate" aria-labelledby="hero-name">
-    <div class="leg__col brackets">
-      <p class="eyebrow">Gate 01 · Ready for departure</p>
-      <h1 id="hero-name" class="flap-board" data-flap aria-label={site.name}>
-        {
-          nameWords.map((w) => (
-            <span class="flap-word" aria-hidden="true">
-              {[...w].map((ch) => (
-                <span class="flap"><span>{ch}</span></span>
-              ))}
-            </span>
-          ))
-        }
-      </h1>
-      <div class="gate__meta">
-        <p class="gate__role mono">{site.role} · {site.location}</p>
-        <p class="gate__pitch">{site.intro[1]}</p>
-        <div class="gate__ctas">
-          <a class="btn btn--primary" href="#waypoints">Projects <Fragment set:html={arrowDown} /></a>
-          <a class="btn" href={links.resume.href}>Résumé <Fragment set:html={arrowUpRight} /></a>
-        </div>
-      </div>
-    </div>
-    <div class="runway" aria-hidden="true"></div>
-  </section>
+  <FlightDeck name={site.name} pitch={site.intro[1]} />
 
-  <div class="spacer" data-leg="takeoff" aria-hidden="true"></div>
+  <div class="spacer" data-leg="takeoff" aria-hidden="true" style="height: 100vh"></div>
 
   <!-- 2 · CLIMB — about + toolkit ─────────────────────────────────── -->
   <section class="leg phase-cruise" data-leg="climb" id="about" aria-labelledby="about-title">

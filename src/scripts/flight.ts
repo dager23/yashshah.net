@@ -44,7 +44,7 @@ function at(sel: string, edge: 'top' | 'bottom', vp: number, fallback: number): 
 
 function computeKeys(): void {
   keys = {
-    dawn0: at('[data-leg="takeoff"]', 'top', 0.5, 0.05),
+    dawn0: at('[data-leg="takeoff"]', 'top', 0.2, 0.05), // the cockpit has cleared: fly into the dawn first
     liftoff: at('[data-leg="takeoff"]', 'top', 0.3, 0.08),
     dawn1: at('#about', 'top', 1.0, 0.12),
     mach1: at('[data-leg="mach"]', 'top', 0.5, 0.3),
@@ -154,21 +154,31 @@ function update(scrollP: number): void {
   }
 }
 
-/* ─── split-flap board ───────────────────────────────────────────────── */
-const FLAP_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-function flipBoard(board: HTMLElement): void {
-  if (reduced) return;
-  board.querySelectorAll<HTMLElement>('.flap > span').forEach((span, i) => {
-    const final = span.textContent ?? '';
-    const tl = gsap.timeline({ delay: 0.2 + i * 0.07 });
-    const flips = 6 + ((i * 7) % 5);
-    for (let k = 0; k < flips; k++) {
-      tl.set(span, { textContent: FLAP_CHARS[(i * 11 + k * 5) % FLAP_CHARS.length] }).fromTo(
-        span, { rotateX: -85 }, { rotateX: 0, duration: 0.055, ease: 'none' }
-      );
-    }
-    tl.set(span, { textContent: final }).fromTo(span, { rotateX: -85 }, { rotateX: 0, duration: 0.16, ease: 'expo.out' });
+/* ─── gate: push through the windscreen; the readout undocks as the deck clears ─── */
+function pushThrough(): void {
+  const gate = document.getElementById('gate');
+  const readout = document.getElementById('readout');
+  const stow = (on: boolean) => {
+    readout?.classList.toggle('is-stowed', on);
+  };
+  stow(gate !== null); // the persisted readout must reappear on pages without a gate
+  if (!gate) return;
+  const range = { trigger: gate, start: 'top top', end: 'bottom top' };
+  ScrollTrigger.create({
+    ...range,
+    onUpdate: (self) => stow(self.progress < 0.5),
+    onRefresh: (self) => stow(self.progress < 0.5),
   });
+  if (reduced) return; // the cockpit simply scrolls away
+  // clears by 65% of the gate, before liftoff and the dawn → cruise cross-fade (computeKeys)
+  const q = gsap.utils.selector(gate);
+  gsap
+    .timeline({ defaults: { ease: 'none' }, scrollTrigger: { ...range, scrub: true, invalidateOnRefresh: true } })
+    .to(q('.deck__stage'), { y: () => gate.offsetHeight, duration: 1 }, 0) // hold the cockpit still while the page scrolls
+    .to(q('.deck__hud, .deck__screen'), { autoAlpha: 0, duration: 0.25 }, 0)
+    .to(q('.deck__frame'), { scale: 2.6, ease: 'power2.in', duration: 0.6 }, 0)
+    .to(q('.deck__view'), { yPercent: 16, scale: 1.2, ease: 'power1.in', duration: 0.55 }, 0.05) // nose up: the horizon drops
+    .to(q('.deck__stage'), { autoAlpha: 0, duration: 0.3 }, 0.35);
 }
 
 /* ─── masked line reveals, once each ─────────────────────────────────── */
@@ -272,8 +282,7 @@ function initPage(): void {
     computeKeys();
     triggers();
     reveals();
-    const board = document.querySelector<HTMLElement>('[data-flap]');
-    if (board) flipBoard(board);
+    pushThrough();
   });
   lenis?.resize();
   ScrollTrigger.refresh();
