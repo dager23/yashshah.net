@@ -34,3 +34,6 @@ Thumbs.db
 
 .vercel
 .env*
+
+# large source assets (re-fetch per CREDITS.md)
+assets-src/
