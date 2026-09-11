@@ -1,70 +1,45 @@
 # Deploy — manual steps
 
-The site is built and committed on `main`. Everything below needs you in a
-browser; Claude Code can't do these. Do them in order. When DNS is done, tell
-Claude Code and it will verify with `dig` / `curl`.
+Done already, via GitHub + the Vercel CLI:
 
-`gh` (GitHub CLI) isn't installed on this machine, so step 1 is manual too.
+- ✅ Repo pushed: <https://github.com/dager23/yashshah.net>
+- ✅ Vercel project `yashshahweb` created and linked, GitHub connected for
+  continuous deployment (every push to `main` auto-deploys)
+- ✅ Live at <https://yashshahweb.vercel.app> — verified (200s, real 404)
+- ✅ `yashshah.net` and `www.yashshah.net` attached to the project
+- ✅ `www.yashshah.net` set to 308-redirect to `yashshah.net`
 
----
-
-## 1. Create the GitHub repo and push
-
-1. Go to <https://github.com/new>.
-   - **Name:** `yashshah.net`
-   - **Visibility:** Public
-   - **Do NOT** add a README, .gitignore, or license (the repo already has them).
-2. Create the repo, then run these three commands in `D:\yashshahweb`:
-
-```bash
-git remote add origin https://github.com/<your-username>/yashshah.net.git
-git branch -M main
-git push -u origin main
-```
-
-If `git push` asks you to authenticate, use a GitHub Personal Access Token as the
-password (Settings → Developer settings → Tokens), or install GitHub Desktop and
-push from there.
+**One step left, and it's the only one that has to happen in a browser:**
+point Spaceship's DNS at Vercel.
 
 ---
 
-## 2. Import into Vercel
+## Point DNS at Vercel (Spaceship)
 
-1. Go to <https://vercel.com/new> (sign in with GitHub).
-2. Import `yashshah.net`. Vercel auto-detects Astro — leave every build setting
-   at its default (build `astro build`, output `dist`).
-3. Deploy. When it finishes, open the `*.vercel.app` URL and click through:
-   home, a project case study, the 404 (visit a bad path).
-
----
-
-## 3. Add the custom domain in Vercel
-
-1. Project → **Settings → Domains**.
-2. Add `yashshah.net`. Add `www.yashshah.net`.
-3. Set **`www.yashshah.net` to redirect to `yashshah.net`** (Vercel shows a
-   "Redirect to" dropdown — pick the bare domain, 308).
-4. Vercel now shows the DNS records it wants. **Write them down exactly.**
-   They're almost always:
-   - `A` record, host `@` → `76.76.21.21`
-   - `CNAME` record, host `www` → `cname.vercel-dns.com`
-
-   Use whatever Vercel actually shows you, not this from memory.
-
----
-
-## 4. Point DNS at Vercel (Spaceship)
+Spaceship is currently serving its own parking page for `yashshah.net` — that's
+why the domain isn't live yet even though Vercel is fully configured.
 
 1. Spaceship → **Domain Manager → yashshah.net → DNS**.
-2. **Delete** the default parking / URL-forward records (usually an `A` on `@`
-   pointing at a Spaceship IP, and/or a `CNAME` on `www`).
-3. **Add exactly the records Vercel showed** in step 3.4.
+2. **Delete** the existing `A` record on `@` and any `CNAME` on `www` (the
+   parking/redirect ones Spaceship added by default).
+3. **Add exactly these two records** (confirmed straight from Vercel for this
+   domain — `vercel domains inspect`):
+
+   | Type  | Host | Value               |
+   | ----- | ---- | ------------------- |
+   | A     | @    | `76.76.21.21`        |
+   | CNAME | www  | `cname.vercel-dns.com` |
+
 4. **Leave `MX` records alone** — email forwarding needs them.
 5. Save. Propagation is usually minutes, sometimes up to an hour.
 
+Tell Claude Code once you've saved these — it can re-run
+`vercel domains inspect yashshah.net` and `dig`/`curl` to confirm the moment
+it's live, rather than you having to guess when propagation finished.
+
 ---
 
-## 5. Email forwarding (Spaceship)
+## 2. Email forwarding (Spaceship)
 
 1. Spaceship → **Email Forwarding** for `yashshah.net`.
 2. Forward `hi@yashshah.net` → your Gmail (`dragondager23@gmail.com`).
@@ -74,7 +49,7 @@ push from there.
 
 ---
 
-## 6. Verification (Claude Code runs this)
+## 3. Verification (Claude Code runs this)
 
 Once DNS has propagated, ask Claude Code to verify. It will run:
 
