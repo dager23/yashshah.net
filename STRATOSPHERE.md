@@ -9,7 +9,7 @@ the alternative. All content comes unchanged from `src/data/*` and `src/content/
 | Phase | Section | What happens |
 | --- | --- | --- |
 | Gate / takeoff | hero `#gate` | the flight deck at dawn: full-bleed windscreen, name on the HUD, pitch on the centre display. On load the HUD boots — the base's coordinates and the flight plan settle character by character, the plan draws itself in an inset — clouds drift on the horizon, faint stars at the zenith, `[ Enter flight log ↓ ]` under the name; scrolling pushes through into the sky and the readout undocks as the cockpit clears |
-| Climb | `#about` (about + toolkit) | sky cross-fades to cruise; toolkit as instrument gauges |
+| Climb | `#about` (about + toolkit) | sky cross-fades to cruise; toolkit as a systems display |
 | Mach 1 | entering `#waypoints` | one vapour ring, a shock line sweeps the viewport, readout flashes amber |
 | Cruise | `#waypoints` | Earth limb + twinkling stars (the globe keeps turning on desktop); each project docks in as a display unit (EFMIX → URBST → VIDGP → DCATH), threaded by a dashed leg with star markers |
 | Flight log | `#log` | experience as logbook entries with airport-code chips; the route map sits beside them (sticky on desktop) and the leg into each role's city lights up as you pass it |
@@ -18,9 +18,14 @@ the alternative. All content comes unchanged from `src/data/*` and `src/content/
 
 The aircraft is a Concorde-style delta silhouette (top-down, cyan HUD rendering) that follows its heading and foreshortens into turns, with a contrail of soft sprites at altitude — the same glyph on the WebGL scene, the 2D fallback and the route map. The toolkit is a **systems display** — the page a screen draws mid-flight, after the cockpit is behind you: an Airbus ECAM system page is a bus with its components branching off it, so each group is a glass card with a cyan bus line, a node per item, and the real item count zero-padded in the header. (It was cockpit hardware first — an overhead panel of toggle switches — which read as odd, because overhead panels are *in* the cockpit and by then you have flown through the windscreen.)
 
-**The glass material** (header, readout, systems cards) is blur + saturate + *dim*, not an opaque fill: the tint is 5–20 % and `backdrop-filter: brightness()` is what buys legibility, so the sky, Earth and stars stay visible through the pane. The dimming rides `--pale` (= max(dawn, dusk)), so the chrome is near-clear over the dark cruise sky and darkens only over a pale dawn/dusk sky. The systems cards use a fixed, deeper dim (0.36) because the Earth's bright limb passes behind them. Every pairing is computed ≥ 4.5:1 (worst case 5.3:1, light text over white cloud); a `@supports` fallback fills the panes for browsers without `backdrop-filter`.
+**The glass material** (header, readout, systems cards) is blur + saturate + a *brightness* step on the backdrop — never an opaque fill — so the sky, the Earth and the stars stay visible through the pane. Two things matter:
 
-Instruments are never still: attitude balls and standby needles drift, the HUD horizon breathes, the centre display has CRT scan lines; once per session the panel powers up in sequence (`.is-boot`, sessionStorage). The header glass is dense only while a pale sky is behind it (`--pale`); over the cruise sky it clears to a see-through pane. Tags, chips and instrument labels use a condensed cut of Archivo (its wdth axis) rather than a third typeface. Teal (`--teal`) is the one tertiary accent: focus rings and secondary hovers.
+- **Direction follows the backdrop.** Real dark-mode glass *lifts* a dark scene rather than dimming it; that lift is what makes a pane read as a pane. The header runs `brightness(1.25)` with a 7 % light film over the cruise sky, and only inverts to `0.50` with a 22 % navy tint over a pale dawn/dusk sky, interpolated by `--pale` (= max(dawn, dusk)). It can afford this because **nothing bright ever passes behind it**: the Earth's top edge is pinned to the bottom 7–18 % of the viewport (`thetaTop` in scene.ts).
+- **Exposure decides the rest.** The readout sits permanently inside that Earth band and the systems cards cross it at the foot of the viewport, so both keep a dim (0.45 and 0.46) instead of a lift. Measured: header 8.7:1 over cruise and 4.9:1 over dawn; readout 4.8–13.8:1; cards 5.1:1 against the Earth's real cloud tops (RGB ~200) and 12.4:1 over sky. The one soft spot is a card against theoretical pure-white cloud at 3.7:1, which the render never actually produces.
+
+The rim is a 5 px ring that samples the backdrop brighter than the pane's face (`brightness(1.45)`, desktop only), so the edge reads as light bending through the curve of the glass, with a travelling highlight over it. A `@supports` fallback fills the panes where `backdrop-filter` is unavailable.
+
+Instruments are never still: attitude balls and standby needles drift, the HUD horizon breathes, the centre display has CRT scan lines; once per session the panel powers up in sequence (`.is-boot`, sessionStorage). Tags, chips and instrument labels use a condensed cut of Archivo (its wdth axis) rather than a third typeface. Teal (`--teal`) is the one tertiary accent: focus rings and secondary hovers.
 
 Every section eyebrow carries an altitude readout that follows the readout's profile (climb 10,000 → cruise 60,000 → 40,000 → 20,000 → 0 ft). A film-grain + vignette layer (`.film`) sits over the whole site. The one line of voice — "Apparently likes planes enough to build an entire portfolio around them" — is the user's own copy, under the About lead.
 
@@ -35,7 +40,7 @@ Every section eyebrow carries an altitude readout that follows the readout's pro
 | `src/scripts/fallback2d.ts` | 2D route + SVG flight-path marker (hero poster, and the no-WebGL fallback) |
 | `src/scripts/path.ts` | the route's control points, shared by 3D and 2D |
 | `src/data/flightplan.ts` | waypoint idents, city coordinates, Concorde cruise figures (presentation only) |
-| `src/styles/strato-*.css` | tokens, sky phases, instrument layer, sections; `strato-live.css` is everything that moves or reacts — runway lights, the Mach 1 shock line, liquid-glass v2 (pointer specular, sky-tinted rim), waypoint connectors, log ↔ map sync, passport stamps, boarding-pass tilt, footer flight strip |
+| `src/styles/strato-*.css` | tokens, sky phases, instrument layer, sections; `strato-live.css` is everything that moves or reacts — runway lights, the Mach 1 shock line, the glass material (backdrop lift/dim, pointer specular, refractive rim), waypoint connectors, log ↔ map sync, passport stamps, boarding-pass tilt, footer flight strip |
 | `scripts/gen-images.mjs` + `scripts/og.html` | share card (headless Chrome renders the HTML with the site's fonts and Earth texture) and the flight-path-marker favicons — `npm run gen:images` |
 | `CREDITS.md` | every third-party asset, source, author, licence |
 
