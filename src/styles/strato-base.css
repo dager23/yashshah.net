@@ -148,7 +148,8 @@ a { color: inherit; }
 .sky { position: fixed; inset: 0; z-index: -2; pointer-events: none; }
 .sky > i { position: absolute; inset: 0; opacity: 0; will-change: opacity; z-index: 1; }
 .sky > .sky__cruise { z-index: 0; } /* cruise is the base; dawn and dusk fade in over it */
-.sky__dawn { background: linear-gradient(180deg, var(--dawn-top), var(--dawn-bot)); }
+/* takeoff happens in fog: the same greys as the hero view (FlightDeck.astro), so the push-through is seamless */
+.sky__dawn { background: linear-gradient(180deg, #8d95a0, #7a828d 65%, #6f7782); }
 /* lighter zenith plus a cyan atmosphere glow along the horizon, so the long cruise
    stretch has depth instead of reading as flat navy */
 .sky__cruise {

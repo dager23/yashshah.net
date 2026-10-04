@@ -17,10 +17,13 @@ import { getState, subscribe } from './store';
 const MODEL_URL: string | null = null; // e.g. '/models/concorde.glb' once processed
 
 const INSTR = new Color('#7fd3ff');
+const WARM = new Color('#f2a36b');
 const smooth = (a: number, b: number, v: number) => {
   const t = Math.min(1, Math.max(0, (v - a) / (b - a)));
   return t * t * (3 - 2 * t);
 };
+/** sine ease-in-out over 0..1 — gentler at both ends than smoothstep */
+const ease = (t: number) => 0.5 - 0.5 * Math.cos(Math.PI * Math.min(1, Math.max(0, t)));
 
 function hasWebGL(): boolean {
   try {
@@ -81,6 +84,24 @@ function ringTexture(): CanvasTexture {
   return new CanvasTexture(c);
 }
 
+/** the sun: a white-hot core in a wide, warm falloff */
+function sunTexture(): CanvasTexture {
+  const s = 256, c = document.createElement('canvas');
+  c.width = c.height = s;
+  const g = c.getContext('2d')!;
+  const grad = g.createRadialGradient(s / 2, s / 2, 0, s / 2, s / 2, s / 2);
+  grad.addColorStop(0, 'rgba(255,252,245,1)');
+  grad.addColorStop(0.1, 'rgba(255,246,228,1)');
+  grad.addColorStop(0.14, 'rgba(255,214,160,.7)');
+  grad.addColorStop(0.36, 'rgba(242,163,107,.18)');
+  grad.addColorStop(1, 'rgba(242,163,107,0)');
+  g.fillStyle = grad;
+  g.fillRect(0, 0, s, s);
+  const t = new CanvasTexture(c);
+  t.colorSpace = SRGBColorSpace;
+  return t;
+}
+
 /** one soft puff of contrail */
 function puffTexture(): CanvasTexture {
   const s = 64, c = document.createElement('canvas');
@@ -121,6 +142,7 @@ export function startScene(canvas: HTMLCanvasElement): boolean {
 
   /* ── Earth + atmosphere ── */
   const earth = new Group();
+  const atmoColor = INSTR.clone(); // the limb's glow warms while the sun sits low on it
   const earthMat = new MeshStandardMaterial({ roughness: 0.95, metalness: 0, envMapIntensity: 0.15, color: 0x8a96a8 });
   new TextureLoader().load(mobile ? '/textures/earth-3k.webp' : '/textures/earth-4k.webp', (t) => {
     t.colorSpace = SRGBColorSpace;
@@ -138,7 +160,7 @@ export function startScene(canvas: HTMLCanvasElement): boolean {
   const atmo = new Mesh(
     new SphereGeometry(1.035, mobile ? 48 : 96, mobile ? 32 : 64),
     new ShaderMaterial({
-      uniforms: { uColor: { value: INSTR }, uStrength: { value: 1 } },
+      uniforms: { uColor: { value: atmoColor }, uStrength: { value: 1 } },
       vertexShader: `varying vec3 vN; varying vec3 vV;
         void main(){ vec4 mv = modelViewMatrix*vec4(position,1.); vN = normalize(normalMatrix*normal); vV = normalize(-mv.xyz); gl_Position = projectionMatrix*mv; }`,
       fragmentShader: `uniform vec3 uColor; uniform float uStrength; varying vec3 vN; varying vec3 vV;
@@ -150,6 +172,16 @@ export function startScene(canvas: HTMLCanvasElement): boolean {
   const EARTH_R = 100;
   earth.scale.setScalar(EARTH_R);
   scene.add(earth);
+
+  /* ── the sun: far behind the Earth, so the globe occludes it until it clears the limb ── */
+  const SUN_D = 3000;
+  const sunTex = sunTexture();
+  const sunDisc = new Sprite(new SpriteMaterial({ map: sunTex, transparent: true, opacity: 0, depthWrite: false, blending: AdditiveBlending }));
+  const corona = new Sprite(new SpriteMaterial({ map: sunTex, transparent: true, opacity: 0, depthWrite: false, blending: AdditiveBlending }));
+  sunDisc.scale.setScalar(340);
+  corona.scale.setScalar(1200);
+  scene.add(corona, sunDisc);
+  const sunDir = new Vector3();
 
   /* ── stars: a dome behind the Earth; each one twinkles on its own phase, the dome drifts with scroll ── */
   const STAR_N = mobile ? 500 : 1400;
@@ -300,8 +332,9 @@ export function startScene(canvas: HTMLCanvasElement): boolean {
     planLine.geometry.setDrawRange(idx, Math.min(241 - idx, 70));
     (flownLine.material as LineBasicMaterial).opacity = 0.55 * (1 - 0.75 * smooth(0.88, 1, u)); // fades on final approach
 
-    // altitude 0..1: nothing on the ground, everything at cruise
-    const alt = smooth(0.06, 0.45, u) * (1 - smooth(0.84, 1, u));
+    // altitude 0..1 — a long, even climb over most of the page and a late descent, so the horizon
+    // curves away gradually as you scroll instead of all at once near the top
+    const alt = ease((u - 0.04) / 0.66) * (1 - ease((u - 0.82) / 0.18));
 
     // contrail: only at altitude; the puffs sit on the curve just flown, growing and thinning behind the plane
     for (let k = 0; k < PUFFS; k++) {
@@ -315,10 +348,22 @@ export function startScene(canvas: HTMLCanvasElement): boolean {
 
     // Earth limb, placed by angular radius: ~72° near the runway reads as a flat horizon,
     // ~25° at cruise shows the curvature. Its top edge sits on the runway line, rising at altitude.
-    const rho = ((72 - 47 * Math.pow(alt, 0.7)) * Math.PI) / 180;
+    const rho = ((72 - 47 * alt) * Math.PI) / 180; // linear in altitude, so the curvature never lurches
     const thetaTop = Math.atan((-0.86 + 0.22 * alt) * Math.tan((camera.fov * Math.PI) / 360));
     const dist = EARTH_R / Math.sin(rho), thetaC = thetaTop - rho;
     earth.position.set(0, dist * Math.sin(thetaC), camera.position.z - dist * Math.cos(thetaC));
+
+    // sunrise: the sun climbs out from behind the limb through the climb and sinks back on the approach
+    const rise = ease((u - 0.08) / 0.55) * (1 - ease((u - 0.84) / 0.14));
+    const el = thetaTop + ((-5 + 15 * rise) * Math.PI) / 180;
+    const az = ((mobile ? 4 : 8) * Math.PI) / 180; // right of the text column, left of the fixed readout
+    sunDir.set(Math.sin(az) * Math.cos(el), Math.sin(el), -Math.cos(az) * Math.cos(el)).multiplyScalar(SUN_D).add(camera.position);
+    sunDisc.position.copy(sunDir);
+    corona.position.copy(sunDir);
+    const sunOn = smooth(0.03, 0.1, u);
+    sunDisc.material.opacity = sunOn;
+    corona.material.opacity = 0.5 * sunOn;
+    atmoColor.copy(INSTR).lerp(WARM, 0.5 * sunOn * Math.max(0, 1 - Math.abs(rise - 0.2) / 0.3));
     // desktop, tab visible, Earth in view: the globe keeps turning (one turn ≈ 10 min) and the stars breathe
     const live = !mobile && !reduced && !document.hidden && u > 0.2 && u < 0.95;
     if (live) {

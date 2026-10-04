@@ -1,0 +1,59 @@
+---
+import Strato from '../../layouts/Strato.astro';
+import { getPosts, formatDate } from '../../data/blog';
+import arrowRight from 'lucide-static/icons/arrow-right.svg?raw';
+
+const posts = await getPosts();
+---
+
+<Strato
+  path="/blog"
+  title="Blog"
+  description="Notes on machine-learning systems, computer vision, and the engineering around them."
+  parked="NOTES"
+>
+  <section class="leg phase-cruise" aria-labelledby="blog-title" style="padding-top: 9rem; min-height: 80svh">
+    <div class="leg__col">
+      <p class="eyebrow">Dispatches{posts.length > 0 && <> · <b>{posts.length} logged</b></>}</p>
+      <h1 class="leg__title" id="blog-title" data-reveal>Blog</h1>
+      {
+        posts.length === 0 ? (
+          <p class="leg__lead">No dispatches logged yet.</p>
+        ) : (
+          <ol class="dispatches" role="list">
+            {posts.map((p) => (
+              <li>
+                <a class="dispatch" href={`/blog/${p.slug}`}>
+                  <time class="mono" datetime={p.date.toISOString()}>{formatDate(p.date)}</time>
+                  <h2>{p.title}</h2>
+                  {p.description && <p>{p.description}</p>}
+                  <span class="panel__link mono">Read <Fragment set:html={arrowRight} /></span>
+                </a>
+              </li>
+            ))}
+          </ol>
+        )
+      }
+    </div>
+  </section>
+</Strato>
+
+<style>
+  .dispatches { margin-top: 2.5rem; display: grid; gap: 1.1rem; list-style: none; }
+  .dispatch {
+    display: block; padding: 1.3rem 1.4rem; border-radius: 14px; text-decoration: none; color: var(--ink-light);
+    background: rgb(127 211 255 / 0.05);
+    -webkit-backdrop-filter: blur(14px) saturate(180%) brightness(0.46);
+    backdrop-filter: blur(14px) saturate(180%) brightness(0.46);
+    box-shadow: inset 0 0 0 1px rgb(232 237 245 / 0.1), inset 0 1px 0 rgb(255 255 255 / 0.22);
+    transition: translate 0.45s var(--ease-out), box-shadow 0.45s;
+  }
+  .dispatch:hover {
+    translate: 0 -3px;
+    box-shadow: inset 0 0 0 1px rgb(127 211 255 / 0.35), inset 0 1px 0 rgb(255 255 255 / 0.3), 0 22px 46px -24px rgb(127 211 255 / 0.45);
+  }
+  .dispatch time { color: var(--instr); }
+  .dispatch h2 { margin-top: 0.6rem; font-size: var(--t-h3); font-weight: 600; font-stretch: 125%; line-height: 1.1; text-wrap: balance; }
+  .dispatch p { margin-top: 0.6rem; color: rgb(232 237 245 / 0.82); }
+  .dispatch .panel__link { margin-top: 1rem; }
+</style>

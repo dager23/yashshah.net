@@ -5,6 +5,7 @@ import sitemap from '@astrojs/sitemap';
 export default defineConfig({
   site: 'https://yashshah.net',
   trailingSlash: 'never',
+  redirects: { '/writing': '/blog' },
   integrations: [sitemap()],
   build: {
     format: 'directory',

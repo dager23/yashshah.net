@@ -1,0 +1,49 @@
+---
+import { render } from 'astro:content';
+import Strato from '../../layouts/Strato.astro';
+import { getPosts, formatDate, type Post } from '../../data/blog';
+import arrowLeft from 'lucide-static/icons/arrow-left.svg?raw';
+
+export async function getStaticPaths() {
+  const posts = await getPosts();
+  return posts.map((post) => ({ params: { slug: post.slug }, props: { post } }));
+}
+
+const { post } = Astro.props as { post: Post };
+const { Content } = await render(post.entry);
+---
+
+<Strato path={`/blog/${post.slug}`} title={post.title} description={post.description} parked="NOTES">
+  <article class="leg phase-cruise case" aria-labelledby="post-title">
+    <div class="leg__col">
+      <a class="case__back mono" href="/blog"><Fragment set:html={arrowLeft} /> Blog</a>
+      <p class="eyebrow" style="margin-top: 2.5rem">
+        <time datetime={post.date.toISOString()}>{formatDate(post.date)}</time>
+      </p>
+      <h1 class="leg__title" id="post-title" data-reveal>{post.title}</h1>
+      {post.entry.data.description && <p class="leg__lead">{post.entry.data.description}</p>}
+      <div class:list={['case__body', 'post', { 'post--titled': post.titleFromHeading }]}>
+        <Content />
+      </div>
+    </div>
+  </article>
+</Strato>
+
+<style>
+  /* the title came from the post's own first heading — don't print it twice */
+  .post--titled > :global(h1:first-child) { display: none; }
+  /* prose headings read as headings here, not as the case studies' mono section labels */
+  .post :global(h2) {
+    margin-top: 2.75rem; padding-top: 0; border-top: 0;
+    font: 600 var(--t-lead) / 1.25 var(--font-wide); font-stretch: 112%; letter-spacing: 0; text-transform: none; color: var(--ink-light);
+  }
+  .post :global(h3) { margin-top: 2rem; font-size: var(--t-body); font-weight: 600; color: var(--ink-light); }
+  .post :global(a) { color: var(--instr); text-underline-offset: 0.2em; }
+  .post :global(ul), .post :global(ol) { padding-left: 1.2rem; display: grid; gap: 0.4rem; color: var(--ink-2); }
+  .post :global(blockquote) { padding: 0.3rem 0 0.3rem 1rem; border-left: 2px solid var(--amber); color: var(--ink-light); font-style: italic; }
+  .post :global(code) { font-family: var(--font-mono); font-size: 0.9em; padding: 0.1em 0.35em; border-radius: 4px; background: rgb(232 237 245 / 0.08); }
+  .post :global(pre) { overflow-x: auto; padding: 1rem 1.1rem; border-radius: 10px; background: rgb(7 11 26 / 0.7); }
+  .post :global(pre code) { padding: 0; background: none; }
+  .post :global(img) { border-radius: 10px; }
+  .post :global(hr) { border: 0; height: 1px; background: var(--hair); margin: 2.5rem 0; }
+</style>

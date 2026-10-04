@@ -6,6 +6,7 @@ import { ClientRouter } from 'astro:transitions';
 import Meta from '../components/Meta.astro';
 import { site, links } from '../data/site';
 import { route } from '../data/flightplan';
+import { getPosts } from '../data/blog';
 
 interface Props {
   title?: string;
@@ -19,6 +20,8 @@ const { title, description = site.tagline, path = Astro.url.pathname, parked } =
 const pageTitle = title ? `${title} — ${site.name}` : `${site.name} — ${site.role}`;
 const canonical = new URL(path, Astro.site ?? 'https://yashshah.net').href.replace(/(.)\/$/, '$1');
 const year = new Date().getFullYear();
+/** the header's Blog link appears with the first published post */
+const hasBlog = (await getPosts()).length > 0;
 
 /** Flip to true once the Sketchfab model is in public/models/ (see CREDITS.md). */
 const modelLive = false;
@@ -53,7 +56,8 @@ const modelLive = false;
         <a href="/#waypoints">Projects</a>
         <a href="/#log">Experience</a>
         <a href="/#clearances">Honours</a>
-        <a class="keep" href={links.resume.href}>Résumé</a>
+        {hasBlog && <a href="/blog">Blog</a>}
+        <a class="keep" href={links.resume.href} target="_blank" rel="noopener">Résumé</a>
       </nav>
     </header>
 

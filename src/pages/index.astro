@@ -267,7 +267,7 @@ const otherLinks = profileLinks.filter((l) => l !== links.resume && l !== contac
           ))
         }
       </div>
-      <a class="pass" href={links.resume.href} aria-label="Open the résumé (PDF)">
+      <a class="pass" href={links.resume.href} target="_blank" rel="noopener" aria-label="Open the résumé (PDF, new tab)">
         <div class="pass__main">
           <div><span class="mono">Passenger</span><strong>{site.name.toUpperCase().split(' ').reverse().join(' / ')}</strong></div>
           <div><span class="mono">Role</span><strong>{site.role}</strong></div>

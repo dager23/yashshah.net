@@ -1,7 +1,7 @@
 ---
 title: Template matching without the pixel-by-pixel scan
 description: Notes on swapping brute-force template comparison for nearest-neighbour search over feature-map embeddings.
-pubDate: 2025-01-01
+date: 2025-01-01
 draft: true
 ---
 

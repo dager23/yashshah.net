@@ -19,14 +19,15 @@ const projects = defineCollection({
     }),
 });
 
-const writing = defineCollection({
-  loader: glob({ pattern: '**/*.md', base: './src/content/writing' }),
+/** Blog posts. Every field is optional; src/data/blog.ts derives what's missing. Files starting with "_" are notes. */
+const blog = defineCollection({
+  loader: glob({ pattern: '**/[^_]*.md', base: './src/content/blog' }),
   schema: z.object({
-    title: z.string(),
-    description: z.string(),
-    pubDate: z.coerce.date(),
+    title: z.string().optional(),
+    description: z.string().optional(),
+    date: z.coerce.date().optional(),
     draft: z.boolean().default(false),
   }),
 });
 
-export const collections = { projects, writing };
+export const collections = { projects, blog };

@@ -12,7 +12,8 @@
     "sync": "astro sync",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "gen:images": "node scripts/gen-images.mjs"
+    "gen:images": "node scripts/gen-images.mjs",
+    "post": "node scripts/new-post.mjs"
   },
   "dependencies": {
     "@astrojs/rss": "4.0.19",

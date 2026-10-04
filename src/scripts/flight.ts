@@ -48,7 +48,7 @@ function computeKeys(): void {
   keys = {
     dawn0: at('[data-leg="takeoff"]', 'top', 0.2, 0.05), // the cockpit has cleared: fly into the dawn first
     liftoff: at('[data-leg="takeoff"]', 'top', 0.3, 0.08),
-    dawn1: at('#about', 'top', 1.0, 0.12),
+    dawn1: at('#about', 'top', 0.25, 0.12), // the fog clears over most of a screen of scroll, not a fifth of one
     mach1: at('[data-leg="mach"]', 'top', 0.5, 0.3),
     cruise: at('#waypoints', 'top', 0.5, 0.35),
     descent: at('#log', 'top', 0.5, 0.7),
@@ -396,7 +396,7 @@ function triggers(): void {
 /* ─── lifecycle ──────────────────────────────────────────────────────── */
 function initLenis(): void {
   if (reduced || lenis) return;
-  lenis = new Lenis({ lerp: 0.1, smoothWheel: true, anchors: true, autoRaf: false });
+  lenis = new Lenis({ lerp: 0.1, smoothWheel: true, anchors: false, autoRaf: false }); // in-page links: see onNavClick
   lenis.on('scroll', ScrollTrigger.update);
   gsap.ticker.add((t) => lenis?.raf(t * 1000));
   gsap.ticker.lagSmoothing(0);
@@ -457,7 +457,37 @@ function initPage(): void {
   lenis?.resize();
   ScrollTrigger.refresh();
   update(ScrollTrigger.maxScroll(window) ? scrollY / ScrollTrigger.maxScroll(window) : 0);
+  arriveAtHash();
   requestScene();
+}
+
+/* ─── in-page navigation has one owner ─────────────────────────────────
+   Header links (/#log) and [ Enter flight log ] (#about) were handled by both Lenis's anchor
+   support and the ClientRouter; depending on timing they cancelled each other and a click did
+   nothing. Same-page hash links now scroll here; links to other pages stay with the router. */
+function scrollToHash(hash: string, immediate = false): boolean {
+  let el: HTMLElement | null = null;
+  try { el = document.querySelector<HTMLElement>(decodeURIComponent(hash)); } catch { return false; }
+  if (!el) return false;
+  if (lenis) lenis.scrollTo(el, { immediate, force: true, duration: 1.6 });
+  else el.scrollIntoView({ behavior: immediate || reduced ? 'auto' : 'smooth' });
+  return true;
+}
+function onNavClick(e: MouseEvent): void {
+  if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+  const a = (e.target as Element | null)?.closest?.<HTMLAnchorElement>('a[href*="#"]');
+  if (!a || a.target || a.classList.contains('skip-link')) return; // the skip link must move focus natively
+  const url = new URL(a.href, location.href);
+  if (url.origin !== location.origin || url.pathname !== location.pathname || !url.hash) return;
+  if (!scrollToHash(url.hash)) return;
+  e.preventDefault();
+  e.stopPropagation(); // capture phase on window: nothing else sees this click
+  if (location.hash !== url.hash) history.replaceState(history.state, '', url.hash);
+}
+addEventListener('click', onNavClick, { capture: true });
+/** arriving from another page on a hash (/#log): Lenis has to land there too, or it drifts back */
+function arriveAtHash(): void {
+  if (location.hash) requestAnimationFrame(() => scrollToHash(location.hash, true));
 }
 
 /* ─── hover: idents tick over (split-flap style), then settle ───────── */

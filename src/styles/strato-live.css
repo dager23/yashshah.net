@@ -24,39 +24,35 @@
 .deck__view { position: absolute; inset: 0; }
 .deck__stage {
   --hz: 330; --data-y: 118; --data-x: 60; --data-fs: 13; --enter-y: 517; --enter-fs: 14;
+  --glow-x: 720; --glow-y: 421; --glow-w: 560; --glow-h: 130; /* the threshold-light row (FAR in FlightDeck.astro) */
   --name-y: 410; --name-fs: 96; /* desktop: the sky band is short, so the name sits well down into the ground band */
 }
 @media (max-aspect-ratio: 7/10) {
   /* phone: the horizon is drawn higher (210 of 844) and the name follows it up */
-  .deck__stage { --hz: 210; --data-y: 66; --data-x: 20; --data-fs: 9.5; --enter-y: 400; --enter-fs: 10.5; --name-y: 246; --name-fs: 60; }
+  .deck__stage { --hz: 210; --data-y: 66; --data-x: 20; --data-fs: 9.5; --enter-y: 400; --enter-fs: 10.5; --name-y: 246; --name-fs: 60; --glow-x: 195; --glow-y: 301; --glow-w: 230; --glow-h: 58; }
 }
-/* depth: the world outside is a touch soft and hazy, the panel stays sharp (desktop only — it's a full-screen filter) */
-@media (hover: hover) { .deck__view { filter: blur(0.5px); } }
-/* the sky a shade deeper at the zenith, a light haze toward the horizon */
+/* depth comes from the fog itself (drawn in FlightDeck.astro) — no full-screen blur filter, so the drifting fog
+   banks and the breathing glow below never force the whole view to re-rasterise */
 .deck__view::after {
   content: ''; position: absolute; inset: 0; pointer-events: none;
-  background: linear-gradient(180deg, rgb(11 16 32 / 0.2), rgb(11 16 32 / 0.06) 42%, rgb(221 230 238 / 0.14) 100%);
+  background: linear-gradient(180deg, rgb(11 16 32 / 0.16), rgb(11 16 32 / 0) 38%);
 }
-/* faint stars at the zenith of the dawn sky */
-.deck__stars {
-  position: absolute; left: 0; top: 0; width: 100%; height: calc(var(--u) * var(--hz) * 0.7); opacity: 0.3;
-  background-image:
-    radial-gradient(1.5px 1.5px at 8% 14%, #e8edf5 50%, transparent), radial-gradient(1px 1px at 21% 32%, #e8edf5 50%, transparent),
-    radial-gradient(1.5px 1.5px at 34% 9%, #e8edf5 50%, transparent), radial-gradient(1px 1px at 47% 25%, #e8edf5 50%, transparent),
-    radial-gradient(2px 2px at 60% 16%, #e8edf5 50%, transparent), radial-gradient(1px 1px at 71% 38%, #e8edf5 50%, transparent),
-    radial-gradient(1.5px 1.5px at 83% 11%, #e8edf5 50%, transparent), radial-gradient(1px 1px at 92% 29%, #e8edf5 50%, transparent),
-    radial-gradient(1px 1px at 15% 48%, #e8edf5 50%, transparent), radial-gradient(1.5px 1.5px at 55% 44%, #e8edf5 50%, transparent),
-    radial-gradient(1px 1px at 78% 52%, #e8edf5 50%, transparent), radial-gradient(1px 1px at 29% 56%, #e8edf5 50%, transparent);
-  animation: twinkle 7s ease-in-out infinite alternate;
+/* the threshold lights' glow through the fog breathes — its own HTML layer, so only opacity animates */
+.deck__glow {
+  position: absolute; display: block; pointer-events: none; border-radius: 50%;
+  left: calc(var(--u) * (var(--glow-x) - var(--glow-w) / 2)); top: calc(var(--u) * (var(--glow-y) - var(--glow-h) / 2));
+  width: calc(var(--u) * var(--glow-w)); height: calc(var(--u) * var(--glow-h));
+  background: radial-gradient(closest-side, rgb(251 217 176 / 0.5), rgb(242 163 107 / 0.2) 45%, transparent);
+  animation: glow-breathe 5.5s ease-in-out infinite alternate;
 }
-@keyframes twinkle { from { opacity: 0.22; } to { opacity: 0.38; } }
-/* thin cloud bands drifting along the horizon; blurred once, then only moved */
+@keyframes glow-breathe { from { opacity: 0.55; } to { opacity: 1; } }
+/* fog banks drifting across the horizon; blurred once, then only moved */
 .deck__cloud {
   position: absolute; display: block;
   left: calc(var(--u) * var(--x)); top: calc(var(--u) * (var(--hz) - var(--dy)));
   width: calc(var(--u) * var(--w)); height: calc(var(--u) * var(--h));
-  border-radius: 50%; background: rgb(232 237 245 / 0.55);
-  filter: blur(calc(var(--u) * 14)); will-change: transform;
+  border-radius: 50%; background: rgb(150 160 172 / 0.5);
+  filter: blur(calc(var(--u) * 22)); will-change: transform;
   animation: drift 110s ease-in-out infinite alternate;
 }
 @keyframes drift { from { transform: translateX(-4%); } to { transform: translateX(6%); } }
@@ -122,10 +118,6 @@ html:not(.js) .deck__route-line { stroke-dashoffset: 0; }
 .deck__enter:hover b:last-child { transform: translateX(0.3em); }
 .deck__enter:active { scale: 0.96; }
 @keyframes nudge { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(0.25em); } }
-.js .deck__lights circle { animation: rwy-blink 2.8s ease-in-out infinite; }
-.js .deck__lights circle:nth-child(3n) { animation-delay: -0.9s; }
-.js .deck__lights circle:nth-child(3n + 1) { animation-delay: -1.9s; }
-@keyframes rwy-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
 
 /* ─── Mach 1: one shock line sweeps the viewport, with a brief flash (flight.ts adds/removes it) ─── */
 .shock { position: fixed; inset: 0; z-index: 35; pointer-events: none; overflow: hidden; }

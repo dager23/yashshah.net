@@ -8,13 +8,13 @@ the alternative. All content comes unchanged from `src/data/*` and `src/content/
 
 | Phase | Section | What happens |
 | --- | --- | --- |
-| Gate / takeoff | hero `#gate` | the flight deck at dawn: full-bleed windscreen, name on the HUD, pitch on the centre display. On load the HUD boots — the base's coordinates and the flight plan settle character by character, the plan draws itself in an inset — clouds drift on the horizon, faint stars at the zenith, `[ Enter flight log ↓ ]` under the name; scrolling pushes through into the sky and the readout undocks as the cockpit clears |
-| Climb | `#about` (about + toolkit) | sky cross-fades to cruise; toolkit as a systems display |
+| Gate / takeoff | hero `#gate` | the flight deck at dawn: full-bleed windscreen, name on the HUD, pitch on the centre display. On load the HUD boots — the base's coordinates and the flight plan settle character by character, the plan draws itself in an inset — the runway runs out into fog with its warm edge lights glowing through it and fog banks drifting across the horizon, `[ Enter flight log ↓ ]` under the name; scrolling pushes through into the sky and the readout undocks as the cockpit clears |
+| Climb | `#about` (about + toolkit) | the fog clears into the cruise sky over most of a screen of scroll; the sun rises out from behind the limb of the Earth and warms its glow; the curvature grows evenly over most of the page; toolkit as a systems display |
 | Mach 1 | entering `#waypoints` | one vapour ring, a shock line sweeps the viewport, readout flashes amber |
 | Cruise | `#waypoints` | Earth limb + twinkling stars (the globe keeps turning on desktop); each project docks in as a display unit (EFMIX → URBST → VIDGP → DCATH), threaded by a dashed leg with star markers |
 | Flight log | `#log` | experience as logbook entries with airport-code chips; the route map sits beside them (sticky on desktop) and the leg into each role's city lights up as you pass it |
 | Clearances | `#clearances` | honours stamp themselves onto the page; Diagnostics paper (DOI) and patent as slips |
-| Landing | `#contact` | dusk sky, touchdown: *Approaching destination · Yash Shah · Contact channel available · [ Initiate contact ]* (email once forwarding is live, LinkedIn until then), résumé as a boarding pass that tilts under the pointer; footer is a flight strip |
+| Landing | `#contact` | dusk sky, the sun sinks back behind the limb, touchdown: *Approaching destination · Yash Shah · Contact channel available · [ Initiate contact ]* (email once forwarding is live, LinkedIn until then), résumé as a boarding pass that tilts under the pointer; footer is a flight strip |
 
 The aircraft is a Concorde-style delta silhouette (top-down, cyan HUD rendering) that follows its heading and foreshortens into turns, with a contrail of soft sprites at altitude — the same glyph on the WebGL scene, the 2D fallback and the route map. The toolkit is a **systems display** — the page a screen draws mid-flight, after the cockpit is behind you: an Airbus ECAM system page is a bus with its components branching off it, so each group is a glass card with a cyan bus line, a node per item, and the real item count zero-padded in the header. (It was cockpit hardware first — an overhead panel of toggle switches — which read as odd, because overhead panels are *in* the cockpit and by then you have flown through the windscreen.)
 
@@ -42,7 +42,13 @@ Every section eyebrow carries an altitude readout that follows the readout's pro
 | `src/data/flightplan.ts` | waypoint idents, city coordinates, Concorde cruise figures (presentation only) |
 | `src/styles/strato-*.css` | tokens, sky phases, instrument layer, sections; `strato-live.css` is everything that moves or reacts — runway lights, the Mach 1 shock line, the glass material (backdrop lift/dim, pointer specular, refractive rim), waypoint connectors, log ↔ map sync, passport stamps, boarding-pass tilt, footer flight strip |
 | `scripts/gen-images.mjs` + `scripts/og.html` | share card (headless Chrome renders the HTML with the site's fonts and Earth texture) and the flight-path-marker favicons — `npm run gen:images` |
+| `src/content/blog/`, `src/data/blog.ts`, `src/pages/blog/` | the blog: a post can be a plain Markdown file (title from its first `# heading`, date from a `YYYY-MM-DD-` file name, description from the first paragraph); see `src/content/blog/_HOW-TO.md` |
+| `scripts/new-post.mjs` | `npm run post -- "Title"` creates a dated post; its TODO line fails the build if it is pushed unwritten |
 | `CREDITS.md` | every third-party asset, source, author, licence |
+
+## Navigation
+
+Same-page hash links (the header, `[ Enter flight log ]`) have one owner: `onNavClick` in flight.ts, a capture-phase click handler that smooth-scrolls through Lenis. Lenis anchor handling is off. When Lenis and the ClientRouter both handled the same click they could cancel each other, and a header link did nothing. Links to other pages stay with the router; arriving on `/#log` from another page lands via `arriveAtHash`. The résumé opens in a new tab, which the router ignores.
 
 ## Adding the Concorde model
 
@@ -97,5 +103,4 @@ The plane is a HUD flight-path marker until the sourced model is in place.
   the cockpit simply scrolls away, the plane holds still per section); not tested with the
   OS setting in a real browser.
 - Not yet checked on a real phone. Desktop Lighthouse not re-run since the flight-deck hero.
-- The old Field Notes components (`Base.astro`, `Row.astro`, `ProjectEntry.astro`,
-  `tokens.css`, `base.css`, `fonts.css`) are unused on this branch.
+- Field Notes' layout, components and styles were removed from `main`; the design is preserved at tag `field-notes`.
