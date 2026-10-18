@@ -1,0 +1,591 @@
+/**
+ * /hangar — the lower ECAM display and its system pages.
+ *
+ * Imported only by the hangar page, so none of this weighs on the home route.
+ * Colour comes from the instrument tokens in strato-base.css: cyan for signal
+ * paths, amber for cautions and findings, teal for outputs that reached a user.
+ */
+
+/* ── the display ────────────────────────────────────────────────────────── */
+.ecam {
+  margin-top: 2.25rem;
+  border-radius: 18px;
+  padding: clamp(0.85rem, 2vw, 1.35rem);
+  background: rgb(5 9 20 / 0.55);
+  box-shadow:
+    inset 0 0 0 1px rgb(232 237 245 / 0.12),
+    inset 0 1px 0 rgb(255 255 255 / 0.16),
+    inset 0 0 60px -30px rgb(127 211 255 / 0.5),
+    0 30px 70px -45px rgb(0 0 0 / 0.9);
+}
+
+/* with JS the display shows one page at a time; without it, every page stacks */
+.js .ecam__pg:not(.is-on) {
+  display: none;
+}
+
+.ecam__pg {
+  animation: ecam-in 0.34s var(--ease-out) both;
+}
+.ecam__pg + .ecam__pg {
+  margin-top: 2.5rem;
+}
+@keyframes ecam-in {
+  from {
+    opacity: 0;
+    translate: 0 6px;
+  }
+}
+
+/* ── page header ────────────────────────────────────────────────────────── */
+.ecam__hd {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem 0.9rem;
+  padding-bottom: 0.7rem;
+  border-bottom: 1px solid rgb(232 237 245 / 0.12);
+}
+.ecam__id {
+  font-family: var(--font-mono);
+  font-size: 1.02rem;
+  letter-spacing: 0.14em;
+  color: var(--instr);
+}
+.ecam__nm {
+  margin: 0;
+  font-size: clamp(1.05rem, 2.4vw, 1.3rem);
+  font-weight: 600;
+}
+.ecam__st {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.14em;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 1px currentColor;
+}
+.ecam__st[data-s='live'] {
+  color: var(--teal);
+}
+.ecam__st[data-s='published'] {
+  color: var(--instr);
+}
+.ecam__st[data-s='in-build'] {
+  color: var(--amber);
+}
+.ecam__st[data-s='research'] {
+  color: rgb(232 237 245 / 0.6);
+}
+.ecam__sum {
+  flex: 1 1 14rem;
+  margin: 0;
+  color: var(--ink-2);
+  font-size: var(--t-small);
+}
+
+/* ── body: synoptic beside the demo ─────────────────────────────────────── */
+.ecam__body {
+  display: grid;
+  gap: 1.1rem;
+  margin-top: 1.1rem;
+  align-items: start;
+}
+@media (min-width: 62rem) {
+  .ecam__body:not(.is-wide) {
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+  }
+}
+
+.ecam__prose p {
+  margin: 0 0 0.7rem;
+  color: var(--ink-2);
+  font-size: var(--t-small);
+  max-width: 58ch;
+}
+
+/* the drawing scrolls rather than shrinking its labels out of legibility */
+.syn-wrap {
+  overflow-x: auto;
+  border-radius: 12px;
+  padding: 0.35rem;
+  background: rgb(127 211 255 / 0.04);
+  box-shadow: inset 0 0 0 1px rgb(232 237 245 / 0.09);
+}
+.syn-wrap svg {
+  display: block;
+  width: 100%;
+  min-width: 34rem;
+  height: auto;
+}
+.syn-cap {
+  margin: 0.5rem 0 0;
+  font-size: 0.74rem;
+  color: var(--ink-3);
+}
+
+/* ── synoptic primitives (see components/strato/syn/parts.ts) ───────────── */
+.syn-box,
+.syn-chip {
+  fill: rgb(127 211 255 / 0.06);
+  stroke: rgb(127 211 255 / 0.4);
+  stroke-width: 1;
+}
+.syn-group {
+  fill: none;
+  stroke: rgb(232 237 245 / 0.16);
+  stroke-width: 1;
+  stroke-dasharray: 3 4;
+}
+.syn--amber .syn-box,
+.syn--amber .syn-chip {
+  fill: rgb(255 122 47 / 0.08);
+  stroke: rgb(255 122 47 / 0.5);
+}
+.syn--teal .syn-box,
+.syn--teal .syn-chip {
+  fill: rgb(99 230 210 / 0.08);
+  stroke: rgb(99 230 210 / 0.45);
+}
+.syn--dim .syn-box,
+.syn--dim .syn-chip {
+  fill: rgb(232 237 245 / 0.04);
+  stroke: rgb(232 237 245 / 0.26);
+}
+
+.syn-ttl {
+  fill: var(--ink-light);
+  font-size: 11px;
+  font-weight: 600;
+  text-anchor: middle;
+}
+.syn-sub {
+  fill: rgb(232 237 245 / 0.62);
+  font-size: 8.5px;
+  text-anchor: middle;
+}
+.syn-chip-t {
+  fill: rgb(232 237 245 / 0.82);
+  font-size: 8.5px;
+  text-anchor: middle;
+}
+.syn-lbl {
+  fill: rgb(232 237 245 / 0.55);
+}
+.syn-xs {
+  font-size: 8px;
+  letter-spacing: 0.08em;
+}
+.syn-sm {
+  font-size: 9.5px;
+}
+.syn-head {
+  fill: rgb(232 237 245 / 0.42);
+  font-size: 8px;
+  letter-spacing: 0.16em;
+}
+.syn-grp {
+  fill: rgb(232 237 245 / 0.42);
+  font-size: 7.5px;
+  letter-spacing: 0.14em;
+}
+.syn-wlbl {
+  fill: rgb(232 237 245 / 0.5);
+  font-size: 7.5px;
+  text-anchor: middle;
+}
+.syn-mono {
+  font-family: var(--font-mono);
+}
+.syn-lbl.syn--instr {
+  fill: rgb(127 211 255 / 0.78);
+}
+.syn-lbl.syn--amber {
+  fill: rgb(255 122 47 / 0.85);
+}
+.syn-lbl.syn--teal {
+  fill: rgb(99 230 210 / 0.8);
+}
+
+.syn-wire {
+  fill: none;
+  stroke: rgb(232 237 245 / 0.22);
+  stroke-width: 1;
+}
+.syn-wire.syn--instr {
+  stroke: rgb(127 211 255 / 0.5);
+}
+.syn-wire.syn--amber {
+  stroke: rgb(255 122 47 / 0.55);
+}
+.syn-wire.syn--teal {
+  stroke: rgb(99 230 210 / 0.5);
+}
+.syn-arw {
+  fill: rgb(232 237 245 / 0.3);
+}
+.syn-arw.syn--instr {
+  fill: rgb(127 211 255 / 0.6);
+}
+.syn-arw.syn--amber {
+  fill: rgb(255 122 47 / 0.65);
+}
+.syn-arw.syn--teal {
+  fill: rgb(99 230 210 / 0.6);
+}
+.syn-axis {
+  fill: none;
+  stroke: rgb(232 237 245 / 0.3);
+  stroke-width: 1;
+}
+.syn-curve {
+  fill: none;
+  stroke-width: 1.6;
+}
+.syn-curve.syn--amber {
+  stroke: rgb(255 122 47 / 0.8);
+}
+.syn-curve.syn--teal {
+  stroke: rgb(99 230 210 / 0.8);
+}
+
+.syn-flow {
+  stroke-dasharray: 3 7;
+  animation: syn-flow 1.9s linear infinite;
+}
+@keyframes syn-flow {
+  to {
+    stroke-dashoffset: -20;
+  }
+}
+
+/* ── demo panels ────────────────────────────────────────────────────────── */
+.demo {
+  border-radius: 12px;
+  overflow: hidden;
+  background: rgb(5 9 20 / 0.5);
+  box-shadow: inset 0 0 0 1px rgb(232 237 245 / 0.1);
+}
+.demo__cap {
+  margin: 0.5rem 0 0;
+  font-size: 0.74rem;
+  color: var(--ink-3);
+}
+
+/* terminal */
+.demo--term {
+  padding: 0.9rem 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.73rem;
+  line-height: 1.65;
+  overflow-x: auto;
+}
+.demo--term pre {
+  margin: 0;
+  white-space: pre;
+}
+.demo__cmd {
+  color: var(--instr);
+}
+.demo__err {
+  color: var(--amber);
+}
+.demo__dim {
+  color: rgb(232 237 245 / 0.55);
+}
+
+/* click-to-load embed */
+.demo__load {
+  position: relative;
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  cursor: pointer;
+  background: transparent;
+  color: inherit;
+}
+.demo__load img {
+  display: block;
+  width: 100%;
+  height: auto;
+  opacity: 0.55;
+  transition: opacity 0.3s;
+}
+.demo__load:hover img,
+.demo__load:focus-visible img {
+  opacity: 0.8;
+}
+.demo__play {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  gap: 0.35rem;
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  letter-spacing: 0.1em;
+  text-align: center;
+  background: linear-gradient(rgb(5 9 20 / 0.35), rgb(5 9 20 / 0.72));
+}
+.demo__play b {
+  color: var(--instr);
+  font-weight: 600;
+}
+.demo__play span {
+  color: rgb(232 237 245 / 0.6);
+  font-size: 0.66rem;
+}
+.demo iframe {
+  display: block;
+  width: 100%;
+  height: clamp(20rem, 46vh, 28rem);
+  border: 0;
+  background: #fff;
+}
+
+/* screenshots */
+.demo__shot img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.demo__thumbs {
+  display: flex;
+  gap: 0.4rem;
+  padding: 0.5rem;
+  overflow-x: auto;
+}
+.demo__thumbs button {
+  flex: 0 0 auto;
+  width: 4.4rem;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  overflow: hidden;
+  cursor: pointer;
+  background: transparent;
+  opacity: 0.45;
+  box-shadow: 0 0 0 1px rgb(232 237 245 / 0.14);
+  transition: opacity 0.25s;
+}
+.demo__thumbs button[aria-current='true'],
+.demo__thumbs button:hover {
+  opacity: 1;
+  box-shadow: 0 0 0 1px rgb(127 211 255 / 0.6);
+}
+.demo__thumbs img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* ── readouts ───────────────────────────────────────────────────────────── */
+.ecam__rd {
+  margin: 1.2rem 0 0;
+  display: grid;
+  gap: 0.1rem;
+}
+.ecam__row {
+  display: grid;
+  grid-template-columns: 5.6rem minmax(0, 1fr);
+  gap: 0.75rem;
+  padding: 0.38rem 0;
+  border-top: 1px solid rgb(232 237 245 / 0.07);
+  font-size: var(--t-small);
+}
+.ecam__k {
+  font-family: var(--font-mono);
+  font-size: 0.64rem;
+  letter-spacing: 0.1em;
+  color: rgb(127 211 255 / 0.72);
+  padding-top: 0.14rem;
+}
+.ecam__v {
+  color: var(--ink-2);
+}
+.ecam__row[data-tone='amber'] .ecam__k {
+  color: var(--amber);
+}
+.ecam__row[data-tone='amber'] .ecam__v {
+  color: rgb(255 199 160 / 0.95);
+}
+.ecam__src {
+  display: block;
+  margin-top: 0.12rem;
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  color: rgb(232 237 245 / 0.42);
+}
+
+/* ── footer: stack + links ──────────────────────────────────────────────── */
+.ecam__ft {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  margin-top: 1.1rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid rgb(232 237 245 / 0.12);
+}
+.ecam__stack {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  flex: 1 1 12rem;
+}
+.ecam__stack li {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.06em;
+  padding: 0.18rem 0.5rem;
+  border-radius: 999px;
+  color: rgb(232 237 245 / 0.72);
+  background: rgb(232 237 245 / 0.05);
+  box-shadow: inset 0 0 0 1px rgb(232 237 245 / 0.1);
+}
+.ecam__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+.ecam__links a {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-decoration: none;
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  color: var(--ink-2);
+  box-shadow: inset 0 0 0 1px rgb(232 237 245 / 0.18);
+  transition:
+    color 0.25s,
+    box-shadow 0.25s;
+}
+.ecam__links a:hover {
+  color: var(--ink-light);
+  box-shadow: inset 0 0 0 1px rgb(127 211 255 / 0.55);
+}
+.ecam__links a[data-primary] {
+  color: var(--instr);
+  box-shadow: inset 0 0 0 1px rgb(127 211 255 / 0.5);
+}
+
+/* ── the control row, like the ECAM panel below the screen ──────────────── */
+.ecam__ctl {
+  display: flex;
+  gap: 0.4rem;
+  margin-top: 1.15rem;
+  padding-top: 0.95rem;
+  overflow-x: auto;
+  border-top: 1px solid rgb(232 237 245 / 0.12);
+  scrollbar-width: thin;
+}
+.ecam__btn {
+  flex: 0 0 auto;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.12em;
+  padding: 0.45rem 0.8rem;
+  border: 0;
+  border-radius: 8px;
+  color: rgb(232 237 245 / 0.6);
+  background: rgb(232 237 245 / 0.04);
+  box-shadow: inset 0 0 0 1px rgb(232 237 245 / 0.12);
+  transition:
+    color 0.22s,
+    background 0.22s,
+    box-shadow 0.22s;
+}
+.ecam__btn:hover {
+  color: var(--ink-light);
+}
+.ecam__btn[aria-selected='true'] {
+  color: var(--instr);
+  background: rgb(127 211 255 / 0.1);
+  box-shadow:
+    inset 0 0 0 1px rgb(127 211 255 / 0.55),
+    0 0 18px -6px rgb(127 211 255 / 0.5);
+}
+
+/* ── the STATUS page ────────────────────────────────────────────────────── */
+.stat {
+  width: 100%;
+  margin-top: 1rem;
+  border-collapse: collapse;
+  font-size: var(--t-small);
+}
+.stat caption {
+  text-align: left;
+  font-family: var(--font-mono);
+  font-size: 0.64rem;
+  letter-spacing: 0.14em;
+  color: rgb(232 237 245 / 0.45);
+  padding-bottom: 0.5rem;
+}
+.stat th,
+.stat td {
+  text-align: left;
+  padding: 0.55rem 0.6rem 0.55rem 0;
+  border-top: 1px solid rgb(232 237 245 / 0.08);
+  vertical-align: top;
+}
+.stat th {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.12em;
+  font-weight: 400;
+  color: rgb(232 237 245 / 0.45);
+  border-top: 0;
+}
+.stat tbody tr {
+  transition: background 0.2s;
+}
+.stat tbody tr:hover {
+  background: rgb(127 211 255 / 0.05);
+}
+.stat__go {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  color: var(--instr);
+  text-decoration: none;
+  cursor: pointer;
+  background: none;
+  border: 0;
+  padding: 0;
+}
+.stat__go:hover {
+  text-decoration: underline;
+}
+.stat__s {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+  white-space: nowrap;
+}
+.stat__s[data-s='live'] {
+  color: var(--teal);
+}
+.stat__s[data-s='published'] {
+  color: var(--instr);
+}
+.stat__s[data-s='in-build'] {
+  color: var(--amber);
+}
+.stat__s[data-s='research'] {
+  color: rgb(232 237 245 / 0.55);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .syn-flow {
+    animation: none;
+  }
+  .ecam__pg {
+    animation: none;
+  }
+}

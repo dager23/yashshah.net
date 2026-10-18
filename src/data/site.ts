@@ -22,13 +22,12 @@ export const site = {
     'I build computer-vision and machine-learning systems — from published ' +
       'research to the factory floor.',
   ],
-  email: 'hi@yashshah.net',
+  email: 'hello@yashshah.net',
 } as const;
 
 /**
  * Every link the site knows about. `enabled: false` entries are kept here on
  * purpose so turning one on is a one-word edit:
- *   - email  → flip once hi@yashshah.net forwarding is live (Spaceship)
  *   - github → add the URL and flip
  */
 export const links = {
@@ -46,13 +45,13 @@ export const links = {
   },
   email: {
     label: 'email',
-    href: 'mailto:hi@yashshah.net',
-    enabled: false,
+    href: 'mailto:hello@yashshah.net',
+    enabled: true,
   },
   github: {
     label: 'github',
-    href: '',
-    enabled: false,
+    href: 'https://github.com/dager23',
+    enabled: true,
     external: true,
   },
 } satisfies Record<string, ProfileLink>;

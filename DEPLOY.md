@@ -39,13 +39,10 @@ it's live, rather than you having to guess when propagation finished.
 
 ---
 
-## 2. Email forwarding (Spaceship)
+## 2. Email (done 2026-10-18)
 
-1. Spaceship → **Email Forwarding** for `yashshah.net`.
-2. Forward `hi@yashshah.net` → your Gmail (`dragondager23@gmail.com`).
-3. Send a test email to `hi@yashshah.net` and confirm it lands in Gmail.
-4. Tell Claude Code once this works — it will flip `email.enabled` to `true` in
-   `src/data/site.ts` (one line) so the address appears on the site, and push.
+`hello@yashshah.net` is a Spacemail mailbox (MX: mx1/mx2.spacemail.com, SPF set). It is
+shown in the hero (`links.email` in `src/data/site.ts`) and is the contact on every /apps page.
 
 ---
 

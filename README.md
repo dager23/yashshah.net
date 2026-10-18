@@ -72,8 +72,8 @@ Plain TypeScript in `src/data/`:
 | `education.ts`    | Degree                                                           |
 | `toolkit.ts`      | Languages / tools, grouped                                       |
 
-Each link in `site.ts` has an `enabled` flag — set `email.enabled` to `true` once
-`hi@yashshah.net` forwarding is live.
+Each link in `site.ts` has an `enabled` flag. The contact address is `hello@yashshah.net`
+(Spacemail mailbox), used in the hero and on every /apps page.
 
 ## Replace the résumé
 

@@ -477,6 +477,7 @@ function onNavClick(e: MouseEvent): void {
   if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
   const a = (e.target as Element | null)?.closest?.<HTMLAnchorElement>('a[href*="#"]');
   if (!a || a.target || a.classList.contains('skip-link')) return; // the skip link must move focus natively
+  if (a.dataset.ecamLink !== undefined) return; // /hangar's ECAM cycles its own pages (scripts/hangar.ts)
   const url = new URL(a.href, location.href);
   if (url.origin !== location.origin || url.pathname !== location.pathname || !url.hash) return;
   if (!scrollToHash(url.hash)) return;
