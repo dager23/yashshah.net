@@ -1,0 +1,199 @@
+/* ─── Plain — legal and app pages ──────────────────────────────────────────
+   Opened from inside the apps (and by Play reviewers), so: fast, static, no scroll
+   scene, no client JS. Same palette and type as Stratosphere, cruise-altitude sky. */
+
+@font-face {
+  font-family: 'Archivo Variable';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  font-stretch: 62% 125%;
+  src: url('/fonts/archivo-latin-wdth-normal.woff2') format('woff2-variations');
+}
+@font-face {
+  font-family: 'JetBrains Mono Variable';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 800;
+  src: url('/fonts/jetbrains-mono-latin-wght-normal.woff2') format('woff2-variations');
+}
+
+:root {
+  --sky-top: #1b2a4e;
+  --sky-bot: #0b1226;
+  --ink: #e8edf5;
+  --ink-2: rgb(232 237 245 / 0.8);
+  --ink-3: rgb(232 237 245 / 0.62);
+  --hair: rgb(232 237 245 / 0.16);
+  --instr: #7fd3ff;
+  --amber: #ff7a2f;
+  --teal: #63e6d2;
+  --font-wide: 'Archivo Variable', 'Archivo', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono Variable', ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+  --t-mono: clamp(0.6875rem, 0.64rem + 0.18vw, 0.8125rem);
+  --t-small: clamp(0.875rem, 0.83rem + 0.2vw, 1rem);
+  --t-body: clamp(1rem, 0.94rem + 0.3vw, 1.125rem);
+  --t-lead: clamp(1.125rem, 1rem + 0.6vw, 1.4rem);
+  --t-h1: clamp(1.9rem, 1.3rem + 2.6vw, 3.4rem);
+  --pad-x: clamp(1rem, 4vw, 3rem);
+  color-scheme: dark;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+}
+
+html {
+  background: var(--sky-bot);
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(180deg, var(--sky-top) 0, var(--sky-bot) 34rem) no-repeat, var(--sky-bot);
+  color: var(--ink);
+  font: 400 var(--t-body) / 1.65 var(--font-wide);
+  overflow-wrap: break-word;
+}
+
+a {
+  color: var(--instr);
+  text-underline-offset: 0.2em;
+}
+a:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-size: var(--t-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.skip-link {
+  position: absolute;
+  left: -9999px;
+}
+.skip-link:focus {
+  left: var(--pad-x);
+  top: 0.75rem;
+  padding: 0.4rem 0.7rem;
+  background: var(--ink);
+  color: var(--sky-bot);
+  z-index: 10;
+}
+
+.p-hdr {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.25rem var(--pad-x);
+  border-bottom: 1px solid var(--hair);
+}
+.p-hdr a {
+  color: var(--ink);
+  text-decoration: none;
+}
+.p-hdr__id b {
+  display: inline-grid;
+  place-items: center;
+  width: 1.9rem;
+  height: 1.9rem;
+  margin-right: 0.6rem;
+  border-radius: 50%;
+  background: var(--ink);
+  color: var(--sky-bot);
+  font-weight: 700;
+  letter-spacing: 0;
+}
+.p-hdr nav {
+  display: flex;
+  gap: 1.4rem;
+}
+.p-hdr nav a:hover,
+.p-hdr__id:hover {
+  color: var(--instr);
+}
+
+main {
+  flex: 1;
+  width: min(42rem, 100%);
+  margin: 0 auto;
+  padding: clamp(2rem, 6vw, 4.5rem) var(--pad-x) 4rem;
+}
+
+.p-eyebrow {
+  color: var(--instr);
+}
+.p-title {
+  margin-top: 0.8rem;
+  font-size: var(--t-h1);
+  font-weight: 650;
+  font-stretch: 118%;
+  line-height: 1.05;
+  text-wrap: balance;
+}
+.p-lead {
+  margin-top: 1rem;
+  font-size: var(--t-lead);
+  color: var(--ink-2);
+  text-wrap: pretty;
+}
+
+.prose {
+  margin-top: 2.5rem;
+}
+.prose > * + * {
+  margin-top: 1rem;
+}
+.prose h2 {
+  margin-top: 2.6rem;
+  padding-top: 1.4rem;
+  border-top: 1px solid var(--hair);
+  font-size: var(--t-lead);
+  font-weight: 600;
+  font-stretch: 112%;
+  line-height: 1.25;
+}
+.prose p,
+.prose li {
+  color: var(--ink-2);
+}
+.prose ul {
+  padding-left: 1.2rem;
+  display: grid;
+  gap: 0.45rem;
+}
+.prose strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+.prose .callout {
+  padding: 1rem 1.15rem;
+  border-radius: 12px;
+  background: rgb(127 211 255 / 0.07);
+  box-shadow: inset 0 0 0 1px rgb(127 211 255 / 0.22);
+  color: var(--ink);
+}
+
+.p-foot {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.6rem 1.5rem;
+  padding: 1.4rem var(--pad-x) 2rem;
+  border-top: 1px solid var(--hair);
+  color: var(--ink-3);
+}
+.p-foot a {
+  color: var(--ink-3);
+}

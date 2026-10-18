@@ -1,0 +1,130 @@
+---
+// Privacy policy for one app, generated from its flags in src/data/apps.ts so every
+// app's policy stays consistent and complete. The URL is baked into each app and its
+// Play listing: never change the path.
+import Plain from '../../../layouts/Plain.astro';
+import { apps, formatUpdated, publisher, type AppEntry } from '../../../data/apps';
+
+export function getStaticPaths() {
+  return apps.map((app) => ({ params: { slug: app.slug }, props: { app } }));
+}
+
+const { app } = Astro.props as { app: AppEntry };
+const p = app.privacy;
+const short = app.shortName;
+const leavesDevice = p.ads || p.purchases || p.analytics;
+---
+
+<Plain
+  title={`${app.name} privacy policy`}
+  description={`How ${app.name} handles your data.`}
+  path={`/apps/${app.slug}/privacy`}
+>
+  <p class="p-eyebrow mono">Privacy policy</p>
+  <h1 class="p-title">{app.name}</h1>
+  <p class="p-lead">Last updated {formatUpdated(p.updated)}. Published by {publisher.name}.</p>
+
+  <div class="prose">
+    <h2>The short version</h2>
+    <p class="callout">
+      Everything you save in {short} stays on your phone. There is no account and no server of our own.
+      {p.ads && ' The free version shows ads from Google AdMob, which collects some device data to serve and measure them.'}
+      {p.purchases && ' Purchases are handled by Google Play and RevenueCat.'}
+    </p>
+
+    <h2>What stays on your device</h2>
+    <p>{short} saves the following in its private storage on your phone:</p>
+    <ul>{p.storedOnDevice.map((item) => <li>{item}</li>)}</ul>
+    <p>
+      This data is never sent to us or to anyone else, and it is deleted when you uninstall the app or clear its data.
+      {p.backups && ' It leaves your phone only if you choose Export backup, which creates a file that you control and share wherever you decide.'}
+    </p>
+    {p.notifications && <p>Reminders are notifications scheduled locally on your phone. No server is involved.</p>}
+
+    {
+      p.ads && (
+        <>
+          <h2>Advertising</h2>
+          <p>
+            The free version uses Google AdMob to show ads. AdMob may collect and process your device's advertising ID,
+            your approximate location derived from your IP address, how you interact with ads, and diagnostic data, in
+            order to show, measure and protect ads. Where the law requires it (for example the EEA and the UK), the app
+            asks for your consent before ads are personalised, and you can change that choice at any time from the app's
+            Settings. You can also reset or delete your advertising ID in your phone's settings. Buying the ad-free
+            upgrade stops all advertising.
+          </p>
+          <p>
+            How Google uses data from apps that use its services:{' '}
+            <a href="https://policies.google.com/technologies/partner-sites">policies.google.com/technologies/partner-sites</a>
+          </p>
+        </>
+      )
+    }
+
+    {
+      p.purchases && (
+        <>
+          <h2>Purchases</h2>
+          <p>
+            In-app purchases are processed by Google Play. Your payment details go to Google, never to us. We use
+            RevenueCat to record which purchases belong to your device so they can be restored. RevenueCat receives an
+            anonymous app user ID, the products purchased, and transaction dates.
+          </p>
+          <p>
+            RevenueCat's privacy policy: <a href="https://www.revenuecat.com/privacy">revenuecat.com/privacy</a>
+          </p>
+        </>
+      )
+    }
+
+    {
+      p.analytics && (
+        <>
+          <h2>Analytics and crash reports</h2>
+          <p>
+            Some versions include Google Firebase Analytics and Crashlytics, which help us see which features are used
+            and fix crashes. They collect app usage events, device model, operating system version and crash logs. They
+            never collect the content you create in the app.
+          </p>
+          <p>
+            Firebase privacy information: <a href="https://firebase.google.com/support/privacy">firebase.google.com/support/privacy</a>
+          </p>
+        </>
+      )
+    }
+
+    {
+      p.notes && p.notes.length > 0 && (
+        <>
+          <h2>Other details</h2>
+          {p.notes.map((note) => <p>{note}</p>)}
+        </>
+      )
+    }
+
+    <h2>What we never do</h2>
+    <ul>
+      <li>Sell your data.</li>
+      <li>Ask for an account, your name, or your contacts.</li>
+      <li>Access your location through the location permission{leavesDevice ? ' (approximate location for ads comes only from your IP address)' : ''}.</li>
+    </ul>
+
+    <h2>Children</h2>
+    <p>{short} is not directed at children under 13, and we do not knowingly collect data from them.</p>
+
+    <h2>Your choices</h2>
+    <ul>
+      {p.ads && <li>Change your ad consent in the app's Settings, or buy the ad-free upgrade to stop ads entirely.</li>}
+      <li>Delete everything the app stores by clearing its data in Android settings, or by uninstalling it.</li>
+      <li>For any request about data held by one of the services above, email us and we will help.</li>
+    </ul>
+
+    <h2>Changes to this policy</h2>
+    <p>If this policy changes, the new version will be published at this address with a new date.</p>
+
+    <h2>Contact</h2>
+    <p>
+      <a href={`mailto:${publisher.email}?subject=${encodeURIComponent(`${short} privacy`)}`}>{publisher.email}</a>
+    </p>
+  </div>
+</Plain>

@@ -1,0 +1,42 @@
+---
+// Lightweight layout for /apps pages: same palette and type as Stratosphere, no
+// scroll scene and no client JS, because these pages open inside the apps' in-app browser.
+import '../styles/plain.css';
+import Meta from '../components/Meta.astro';
+import { site } from '../data/site';
+
+interface Props {
+  title: string;
+  description: string;
+  path: string;
+}
+
+const { title, description, path } = Astro.props;
+const canonical = new URL(path, Astro.site ?? 'https://yashshah.net').href.replace(/(.)\/$/, '$1');
+const year = new Date().getFullYear();
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <Meta title={`${title} — ${site.name}`} description={description} canonical={canonical} />
+    <link rel="preload" as="font" type="font/woff2" href="/fonts/archivo-latin-wdth-normal.woff2" crossorigin />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <header class="p-hdr mono">
+      <a class="p-hdr__id" href="/"><b>YS</b>{site.name}</a>
+      <nav aria-label="Primary">
+        <a href="/apps">Apps</a>
+        <a href="/">Home</a>
+      </nav>
+    </header>
+    <main id="main"><slot /></main>
+    <footer class="p-foot mono">
+      <span>© {year} {site.name}</span>
+      <a href="/apps">All apps</a>
+    </footer>
+  </body>
+</html>

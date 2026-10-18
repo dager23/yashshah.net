@@ -1,0 +1,84 @@
+---
+import Plain from '../../layouts/Plain.astro';
+import { apps, playStoreUrl, publisher } from '../../data/apps';
+---
+
+<Plain title="Apps" description={`Mobile apps by ${publisher.name}.`} path="/apps">
+  <p class="p-eyebrow mono">Apps</p>
+  <h1 class="p-title">Small, focused apps</h1>
+  <p class="p-lead">Android apps and games I build and publish on Google Play.</p>
+
+  <ul class="apps" role="list">
+    {
+      apps.map((app) => (
+        <li class="app">
+          <img src={`/apps/${app.slug}/icon.png`} alt="" width="64" height="64" loading="lazy" />
+          <div>
+            <h2>{app.name}</h2>
+            <p>{app.tagline}</p>
+            <p class="app__links mono">
+              {app.status === 'live' ? (
+                <a href={playStoreUrl(app)} target="_blank" rel="noopener">
+                  Google Play ↗
+                </a>
+              ) : (
+                <span class="app__soon">Coming soon</span>
+              )}
+              <a href={`/apps/${app.slug}/privacy`}>Privacy policy</a>
+            </p>
+          </div>
+        </li>
+      ))
+    }
+  </ul>
+
+  <p class="contact">
+    Questions or feedback: <a href={`mailto:${publisher.email}`}>{publisher.email}</a>
+  </p>
+</Plain>
+
+<style>
+  .apps {
+    margin-top: 2.5rem;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 1rem;
+  }
+  .app {
+    display: grid;
+    grid-template-columns: 64px 1fr;
+    gap: 1.1rem;
+    align-items: start;
+    padding: 1.1rem 1.2rem;
+    border-radius: 14px;
+    background: rgb(127 211 255 / 0.05);
+    box-shadow: inset 0 0 0 1px rgb(232 237 245 / 0.1);
+  }
+  .app img {
+    border-radius: 15px;
+  }
+  .app h2 {
+    font-size: var(--t-lead);
+    font-weight: 600;
+    font-stretch: 112%;
+    line-height: 1.2;
+  }
+  .app p {
+    margin-top: 0.3rem;
+    color: var(--ink-2);
+  }
+  .app__links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 1.2rem;
+    margin-top: 0.7rem !important;
+  }
+  .app__soon {
+    color: var(--amber);
+  }
+  .contact {
+    margin-top: 2.5rem;
+    color: var(--ink-3);
+  }
+</style>
