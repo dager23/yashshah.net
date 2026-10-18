@@ -44,11 +44,26 @@ Every section eyebrow carries an altitude readout that follows the readout's pro
 | `scripts/gen-images.mjs` + `scripts/og.html` | share card (headless Chrome renders the HTML with the site's fonts and Earth texture) and the flight-path-marker favicons — `npm run gen:images` |
 | `src/content/blog/`, `src/data/blog.ts`, `src/pages/blog/` | the blog: a post can be a plain Markdown file (title from its first `# heading`, date from a `YYYY-MM-DD-` file name, description from the first paragraph); see `src/content/blog/_HOW-TO.md` |
 | `scripts/new-post.mjs` | `npm run post -- "Title"` creates a dated post; its TODO line fails the build if it is pushed unwritten |
+| `src/data/hangar.ts` | the /hangar fleet: what each system is, its readouts and where every figure came from |
+| `src/components/strato/syn/` | the ECAM synoptics — `parts.ts` draws the primitives, `diagrams.ts` composes the seven drawings |
+| `src/pages/hangar/`, `src/scripts/hangar.ts`, `src/styles/strato-hangar.css` | the display, its page cycle and its styles |
+| `scripts/hangar-media.mjs` | `npm run hangar:media` — pulls the demo screenshots from my own repos and recaptures the live signals site |
 | `CREDITS.md` | every third-party asset, source, author, licence |
 
 ## Navigation
 
 Same-page hash links (the header, `[ Enter flight log ]`) have one owner: `onNavClick` in flight.ts, a capture-phase click handler that smooth-scrolls through Lenis. Lenis anchor handling is off. When Lenis and the ClientRouter both handled the same click they could cancel each other, and a header link did nothing. Links to other pages stay with the router; arriving on `/#log` from another page lands via `arriveAtHash`. The résumé opens in a new tab, which the router ignores.
+
+## Hangar (/hangar)
+
+Lower ECAM: one page per system, cycled by the button row the way an aircraft cycles ENG / BLEED / HYD. Seven systems, chosen because each one can actually be demonstrated.
+
+- **The house rule** lives at the top of `src/data/hangar.ts`: every figure is copied from that project's own README, `BENCHMARKS.md` or package index, and carries a `source` string saying which. A claim that can't be sourced doesn't go on the page. The one drawing that shows a shape rather than a measurement (VSRCH's cost curve) says `SHAPE, NOT MEASUREMENTS` on its face.
+- **Drawings** are composed, not hand-plotted: `parts.ts` attaches wires to box geometry (`rightOf`, `topOf`), so a moved box keeps its arrows. All seven share a 640×360 canvas.
+- **Arrow-head markers are rendered once by the page**, outside the system pages. A `<marker>` that sits inside a `display: none` panel is never painted, and because the ids repeat across drawings that silently drops every arrow-head on every other page.
+- **Demos**: a click-to-load iframe (nothing from the embedded origin is fetched until pressed), screenshots the projects ship themselves, and a terminal block quoting real output. `npm run hangar:media` refetches them; a missing file degrades to the synoptic alone rather than failing the build.
+- **The cycle** (`src/scripts/hangar.ts`) owns the control row, the status table's links, the keyboard (← → Home End), the hash and both demo widgets. A same-document hash change never re-runs the module, so it listens for `hashchange` as well as `astro:page-load`. Links inside the display carry `data-ecam-link`, which `onNavClick` skips — see Navigation.
+- **No JavaScript**: every page is stacked and the table's links are ordinary in-page anchors.
 
 ## Adding the Concorde model
 
@@ -84,6 +99,7 @@ The plane is a HUD flight-path marker until the sourced model is in place.
 | Cinematic pass (2026-09-12) | Lighthouse mobile 95 · 100 · 100 · 100 (LCP 2.2 s, TBT 180 ms, CLS 0) — the film grain is static on touch devices to keep the main thread free; HUD boot, inset flight plan, clouds, nav pill, map labels/plane, new Contact checked at 1440×900 and 375×812 |
 | Polish pass (2026-09-12) | Lighthouse mobile 95 · 100 · 100 · 100 (LCP 2.2 s, TBT 180 ms, CLS 0) with the browser idle. Lesson: animating anything *inside* the dashboard SVG (needles, attitude balls, the power-on of display groups) repaints the whole panel each frame — a run with those on every device scored 63 / TBT 1,030 ms; they are now desktop-only (`hover: hover`). Rim light and grain flicker also rest on touch devices |
 | Systems display + glass material (2026-09-12) | Lighthouse mobile 89–97 · 100 · 100 · 100 (LCP 2.2–2.4 s, TBT 130–270 ms, CLS 0). **Measure three times before believing a number here:** three runs on one unchanged build gave 88 / 93 / 92, so single readings in the high 80s to mid 90s are the same result. Style & Layout (~1.6–2.2 s) outweighs script evaluation (~0.6 s), which is why `--u`, `--dawn`, `--dusk` and `--pale` are `@property`-typed; the systems cards drop their blur on touch devices, since six backdrop-filtered panes is the one thing phones can't afford |
+| Hangar (2026-10-18) | Lighthouse mobile **97 · 100 · 100 · 100** (LCP 2.4 s, TBT 0 ms, CLS 0). Keyboard cycle, hash deep-links, screenshot switcher and the live embed all checked in headless Chrome — the embed renders blank in the in-app browser (its cross-origin policy) but loads 200 plus its `signals.json` in a real one. No horizontal overflow at 390 px; the drawings scroll inside their own panel. Contrast: the status table's caption and headers measured 4.01:1 at 0.45 alpha, raised to 0.58 (~6:1) |
 | JS (gzip) | ≈ 196 KB total (core 54 KB + router 6 KB; three.js 135 KB loads on first interaction) |
 | Contrast | every ink/sky/panel pairing computed ≥ 4.5:1 |
 | JS off | all content present in the static HTML |

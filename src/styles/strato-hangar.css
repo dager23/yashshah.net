@@ -12,6 +12,10 @@
   border-radius: 18px;
   padding: clamp(0.85rem, 2vw, 1.35rem);
   background: rgb(5 9 20 / 0.55);
+  /* the limb crosses behind this panel in cruise: the same dim the .sys cards use */
+  -webkit-backdrop-filter: blur(14px) saturate(180%) brightness(0.46);
+  backdrop-filter: blur(14px) saturate(180%) brightness(0.46);
+  text-shadow: 0 1px 2px rgb(7 11 26 / 0.45);
   box-shadow:
     inset 0 0 0 1px rgb(232 237 245 / 0.12),
     inset 0 1px 0 rgb(255 255 255 / 0.16),
@@ -75,7 +79,7 @@
   color: var(--amber);
 }
 .ecam__st[data-s='research'] {
-  color: rgb(232 237 245 / 0.6);
+  color: rgb(232 237 245 / 0.68);
 }
 .ecam__sum {
   flex: 1 1 14rem;
@@ -89,12 +93,20 @@
   display: grid;
   gap: 1.1rem;
   margin-top: 1.1rem;
+}
+.ecam__split {
+  display: grid;
+  gap: 1.1rem 1.5rem;
   align-items: start;
 }
-@media (min-width: 62rem) {
-  .ecam__body:not(.is-wide) {
-    grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+@media (min-width: 58rem) {
+  .ecam__split:not(.is-wide) {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   }
+}
+.ecam__note {
+  margin-top: 2rem;
+  font-size: var(--t-small);
 }
 
 .ecam__prose p {
@@ -102,6 +114,15 @@
   color: var(--ink-2);
   font-size: var(--t-small);
   max-width: 58ch;
+}
+
+/* markers are referenced by every drawing, so this stays rendered — display:none
+   here would silently drop every arrow-head on the page */
+.syn-defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
 }
 
 /* the drawing scrolls rather than shrinking its labels out of legibility */
@@ -117,6 +138,20 @@
   width: 100%;
   min-width: 34rem;
   height: auto;
+}
+/* on narrow screens the drawing is wider than its panel — say so, once */
+.syn-hint {
+  display: none;
+  margin: 0.4rem 0 0;
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+  color: rgb(127 211 255 / 0.6);
+}
+@media (max-width: 42rem) {
+  .syn-hint {
+    display: block;
+  }
 }
 .syn-cap {
   margin: 0.5rem 0 0;
@@ -170,7 +205,7 @@
   text-anchor: middle;
 }
 .syn-lbl {
-  fill: rgb(232 237 245 / 0.55);
+  fill: rgb(232 237 245 / 0.62);
 }
 .syn-xs {
   font-size: 8px;
@@ -180,17 +215,17 @@
   font-size: 9.5px;
 }
 .syn-head {
-  fill: rgb(232 237 245 / 0.42);
+  fill: rgb(232 237 245 / 0.55);
   font-size: 8px;
   letter-spacing: 0.16em;
 }
 .syn-grp {
-  fill: rgb(232 237 245 / 0.42);
+  fill: rgb(232 237 245 / 0.55);
   font-size: 7.5px;
   letter-spacing: 0.14em;
 }
 .syn-wlbl {
-  fill: rgb(232 237 245 / 0.5);
+  fill: rgb(232 237 245 / 0.6);
   font-size: 7.5px;
   text-anchor: middle;
 }
@@ -283,6 +318,10 @@
 .demo--term pre {
   margin: 0;
   white-space: pre;
+}
+/* one line per span, so the markup carries no literal newlines */
+.demo--term span {
+  display: block;
 }
 .demo__cmd {
   color: var(--instr);
@@ -415,7 +454,7 @@
   margin-top: 0.12rem;
   font-family: var(--font-mono);
   font-size: 0.6rem;
-  color: rgb(232 237 245 / 0.42);
+  color: rgb(232 237 245 / 0.58);
 }
 
 /* ── footer: stack + links ──────────────────────────────────────────────── */
@@ -524,7 +563,8 @@
   font-family: var(--font-mono);
   font-size: 0.64rem;
   letter-spacing: 0.14em;
-  color: rgb(232 237 245 / 0.45);
+  /* 0.45 measured 4.01:1 on this ground — 0.58 holds ~6:1 */
+  color: rgb(232 237 245 / 0.58);
   padding-bottom: 0.5rem;
 }
 .stat th,
@@ -539,7 +579,7 @@
   font-size: 0.6rem;
   letter-spacing: 0.12em;
   font-weight: 400;
-  color: rgb(232 237 245 / 0.45);
+  color: rgb(232 237 245 / 0.58);
   border-top: 0;
 }
 .stat tbody tr {
@@ -578,7 +618,7 @@
   color: var(--amber);
 }
 .stat__s[data-s='research'] {
-  color: rgb(232 237 245 / 0.55);
+  color: rgb(232 237 245 / 0.62);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -587,5 +627,11 @@
   }
   .ecam__pg {
     animation: none;
+  }
+}
+
+@supports not ((backdrop-filter: blur(2px)) or (-webkit-backdrop-filter: blur(2px))) {
+  .ecam {
+    background: rgb(7 11 26 / 0.9);
   }
 }

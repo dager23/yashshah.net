@@ -8,7 +8,7 @@
  * Each entry returns the SVG body plus a `desc`, which becomes the accessible
  * description of the drawing.
  */
-import { box, chip, wire, label, heading, group, defs, rightOf, leftOf, topOf, botOf, type Box } from './parts';
+import { box, chip, wire, label, heading, group, rightOf, leftOf, topOf, botOf, type Box } from './parts';
 
 export interface Synoptic {
   svg: string;
@@ -40,7 +40,6 @@ function docrot(): Synoptic {
       'Each reference is checked twice: against the current tree by an AST resolver, and against git history for provenance. ' +
       'Every reference ends up resolved, skipped as unknown, or reported as a finding carrying the commit where the claim was written.',
     svg:
-      defs() +
       heading(16, 28, 'DOC → CODE RESOLUTION') +
       inputs.map((i) => chip(i.b, i.t)).join('') +
       box(ext, 'reference extractor', { sub: ['symbols · file paths', 'make / tox / npm targets'] }) +
@@ -98,7 +97,6 @@ function seamgraph(): Synoptic {
       'Indexed across twenty real open-source repositories: 118,520 files produce 25,690 anchors and 16,048 seams, ' +
       'answering a reference query with a median of 14.8 times less context than grepping and reading every match.',
     svg:
-      defs() +
       heading(16, 28, 'STRING-TYPED SEAMS — THE JOINS NO COMPILER CHECKS') +
       heading(74, 68, 'CODE SIDE') +
       heading(360, 68, 'CONFIG · INFRA · TEMPLATE SIDE') +
@@ -126,7 +124,6 @@ function repoContract(): Synoptic {
       'and scope against file-count limits. The agent then edits, and the diff gate checks the patch before it lands: forbidden imports, ' +
       'missing tests, undeclared dependencies and refactors spanning unrelated modules. Either gate can refuse, deterministically and with a reason.',
     svg:
-      defs() +
       heading(16, 28, 'TWO GATES AROUND THE AGENT') +
       chip(plan, 'agent proposes a plan', 'dim') +
       box(g1, 'PLAN GATE — before any file is touched', {
@@ -170,7 +167,6 @@ function secondOpinion(): Synoptic {
       'A detection raises an alert carrying signals, quotes and a whisper, which the Case Agent turns into Firestore state: the session, a cool-off hold, ' +
       'and a drafted cybercrime complaint cited to official advisories, with a guardian console on a family member’s phone able to approve the hold.',
     svg:
-      defs() +
       heading(16, 28, 'CALL GUARD — SIGNAL PATH') +
       chip(mic, 'speakerphone / Meet tab', 'dim') +
       box(frame, 'frame check · every 15 s', { sub: ['screen-share coercion'] }) +
@@ -216,7 +212,6 @@ function signals(): Synoptic {
       'Six sleeves feed it: four monthly rank-based baskets and two event sleeves, merged into one combined portfolio with a capital calculator. ' +
       'The project states plainly that this is not investment advice: Sharpe around 0.5 to 0.8 with drawdowns of 30 to 50 percent.',
     svg:
-      defs() +
       heading(16, 28, 'WEEKDAY CYCLE') +
       chip(cron, 'cron · 19:00 IST, weekdays', 'instr') +
       chip(manual, 'manual run', 'dim') +
@@ -255,7 +250,6 @@ function vsearch(): Synoptic {
       'The lower panel is a schematic of why: a pixel-by-pixel scan does work proportional to the number of templates, while an embedding lookup stays close to flat as the set grows. ' +
       'It shows the shape of the two curves, not measured timings.',
     svg:
-      defs() +
       heading(16, 28, 'QUERY PATH') +
       chip(q, 'query image', 'dim') +
       box(net, 'ResNet-101', { sub: ['feature maps'] }) +
@@ -270,7 +264,7 @@ function vsearch(): Synoptic {
       `<path class="syn-axis" d="M${x0} ${yt} V${yb} H${x1}" />` +
       `<path class="syn-curve syn--amber" d="M${x0} ${yb - 6} L${x1} ${yt + 4}" />` +
       `<path class="syn-curve syn--teal" d="M${x0} ${yb - 10} C${x0 + 180} ${yb - 20} ${x1 - 200} ${yb - 26} ${x1} ${yb - 30}" />` +
-      label(x1, yt + 16, 'pixel-by-pixel: every template, every query', { anchor: 'end', tone: 'amber' }) +
+      label(x1, yt - 6, 'pixel-by-pixel: every template, every query', { anchor: 'end', tone: 'amber' }) +
       label(x1, yb - 38, 'embedding + nearest-neighbour lookup', { anchor: 'end', tone: 'teal' }) +
       label(x0 - 8, yt + 6, 'work', { anchor: 'end', tone: 'dim' }) +
       label(x1, yb + 18, 'templates →', { anchor: 'end', tone: 'dim' }) +
@@ -297,7 +291,6 @@ function forgery(): Synoptic {
       'a two-stream RGB and DCT analyser that catches double compression and produces a pixel heatmap; ' +
       'and SSIM template matching against a ground truth that boxes what was added or removed. Their features are fused into a single real-or-fake verdict with a confidence.',
     svg:
-      defs() +
       heading(16, 28, 'FOUR TESTS, ONE VERDICT') +
       box(doc, 'document under test', { tone: 'dim', mono: false }) +
       tests.map(([b, t, sub]) => box(b, t, { sub })).join('') +

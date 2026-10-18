@@ -102,8 +102,19 @@ function mount(): void {
   }
 
   // arriving on /hangar#sys-seamgraph should open that page, not scroll to it
-  const want = location.hash.replace(/^#sys-/, '');
-  if (want && panels.has(want)) show(want, { hash: false });
+  const fromHash = (opts: { hash?: boolean } = {}) => {
+    const want = location.hash.replace(/^#sys-/, '');
+    if (want && panels.has(want)) show(want, opts);
+  };
+  fromHash({ hash: false });
+
+  // a hash change inside the page never re-runs this module, so the display
+  // would otherwise keep showing whichever system was already up
+  const onHash = () => {
+    if (!root.isConnected) return removeEventListener('hashchange', onHash);
+    fromHash({ hash: false });
+  };
+  addEventListener('hashchange', onHash);
 }
 
 mount();

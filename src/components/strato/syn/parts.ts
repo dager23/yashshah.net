@@ -124,7 +124,11 @@ export function group(b: Box, title?: string, tone: Tone = 'dim'): string {
   );
 }
 
-/** arrow-head defs; ids are suffixed per tone and shared across diagrams on the page */
+/**
+ * Arrow-head markers, one per tone. The page renders these ONCE, outside the
+ * system pages — a marker that lives inside a display:none panel is not painted,
+ * which is what happens if each drawing carries its own copy.
+ */
 export function defs(): string {
   const tones: Tone[] = ['instr', 'amber', 'teal', 'dim'];
   return (

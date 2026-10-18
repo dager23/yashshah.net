@@ -13,7 +13,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "gen:images": "node scripts/gen-images.mjs",
-    "post": "node scripts/new-post.mjs"
+    "post": "node scripts/new-post.mjs",
+    "hangar:media": "node scripts/hangar-media.mjs"
   },
   "dependencies": {
     "@astrojs/rss": "4.0.19",

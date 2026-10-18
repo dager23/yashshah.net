@@ -7,6 +7,9 @@
  * actually does), a demo you can press, and readouts whose figures all come from
  * the project itself — see the house rule at the top of src/data/hangar.ts.
  *
+ * The synoptic takes the full width of the display: the drawings are 640 units
+ * wide and clip rather than shrink, so they never share a row with the demo.
+ *
  * Progressive enhancement: with JavaScript off every page is simply stacked and
  * the status table's links are ordinary in-page anchors.
  */
@@ -15,6 +18,7 @@ import { Image } from 'astro:assets';
 import Strato from '../../layouts/Strato.astro';
 import { systems, stateLabel } from '../../data/hangar';
 import { synoptics } from '../../components/strato/syn/diagrams';
+import { defs } from '../../components/strato/syn/parts';
 import '../../styles/strato-hangar.css';
 
 /** screenshots are optional: a missing file degrades to the synoptic, never a broken build */
@@ -48,6 +52,7 @@ const tabs = [{ slug: 'status', ident: 'STATUS' }, ...systems.map((s) => ({ slug
     </div>
 
     <div class="ecam" data-ecam>
+      <svg class="syn-defs" aria-hidden="true" focusable="false" set:html={defs()} />
       <!-- STATUS -->
       <article class="ecam__pg is-on" id="sys-status" role="tabpanel" aria-labelledby="tab-status" tabindex="0">
         <div class="ecam__hd">
@@ -91,6 +96,7 @@ const tabs = [{ slug: 'status', ident: 'STATUS' }, ...systems.map((s) => ({ slug
       {
         systems.map((s) => {
           const syn = synoptics[s.slug];
+          /* a synoptic-only page has no demo panel, so the prose runs under the drawing */
           const wide = s.demo.kind === 'synoptic';
           return (
             <article class="ecam__pg" id={`sys-${s.slug}`} role="tabpanel" aria-labelledby={`tab-${s.slug}`} tabindex="0">
@@ -103,75 +109,69 @@ const tabs = [{ slug: 'status', ident: 'STATUS' }, ...systems.map((s) => ({ slug
                 <p class="ecam__sum">{s.summary}</p>
               </div>
 
-              <div class={`ecam__body${wide ? ' is-wide' : ''}`}>
-                <div>
-                  <div class="syn-wrap">
-                    <svg viewBox="0 0 640 360" role="img" aria-label={`${s.name}: how it works`} set:html={`<title>${s.name}: how it works</title><desc>${syn.desc}</desc>${syn.svg}`} />
-                  </div>
-                  <p class="syn-cap">{s.demo.caption}</p>
-                  {wide && (
-                    <div class="ecam__prose">
-                      {s.body.map((p) => (
-                        <p>{p}</p>
-                      ))}
-                    </div>
-                  )}
+              <div class="ecam__body">
+                <div class="syn-wrap">
+                  <svg viewBox="0 0 640 360" role="img" aria-label={`${s.name}: how it works`} set:html={`<title>${s.name}: how it works</title><desc>${syn.desc}</desc>${syn.svg}`} />
                 </div>
+                <p class="syn-hint" aria-hidden="true">drag the drawing sideways to see all of it →</p>
+                {wide && <p class="syn-cap">{s.demo.caption}</p>}
 
-                {!wide && (
-                  <div>
-                    {s.demo.kind === 'console' && (
-                      <div class="demo demo--term">
-                        <pre>{s.demo.lines.map((l) => (<span class={lineClass(l)}>{l}{'\n'}</span>))}</pre>
-                      </div>
-                    )}
+                <div class={`ecam__split${wide ? ' is-wide' : ''}`}>
+                  {!wide && (
+                    <div>
+                      {s.demo.kind === 'console' && (
+                        <div class="demo demo--term">
+                          <pre>{s.demo.lines.map((l) => <span class={lineClass(l)}>{l}</span>)}</pre>
+                        </div>
+                      )}
 
-                    {s.demo.kind === 'embed' && (
-                      <div class="demo" data-embed-host>
-                        <button class="demo__load" type="button" data-embed={s.demo.url} aria-label={`Load the live site, ${s.demo.url}`}>
-                          {shot(s.demo.poster) && (
-                            <Image src={shot(s.demo.poster)!} alt="" widths={[420, 840]} sizes="(min-width: 62rem) 32rem, 92vw" loading="lazy" />
-                          )}
-                          <span class="demo__play">
-                            <b>▶ LOAD THE LIVE SITE</b>
-                            <span>dager23.github.io — loads only when you press</span>
-                          </span>
-                        </button>
-                      </div>
-                    )}
+                      {s.demo.kind === 'embed' && (
+                        <div class="demo" data-embed-host>
+                          <button class="demo__load" type="button" data-embed={s.demo.url} aria-label={`Load the live site, ${s.demo.url}`}>
+                            {shot(s.demo.poster) && (
+                              <Image src={shot(s.demo.poster)!} alt="" widths={[420, 840]} sizes="(min-width: 58rem) 30rem, 92vw" loading="lazy" />
+                            )}
+                            <span class="demo__play">
+                              <b>▶ LOAD THE LIVE SITE</b>
+                              <span>dager23.github.io — loads only when you press</span>
+                            </span>
+                          </button>
+                        </div>
+                      )}
 
-                    {s.demo.kind === 'shots' && (
-                      <div class="demo" data-shots>
-                        {s.demo.shots.map((sh, i) =>
-                          shot(sh.file) ? (
-                            <figure class="demo__shot" data-shot-i={i} hidden={i > 0}>
-                              <Image src={shot(sh.file)!} alt={sh.caption} widths={[420, 840]} sizes="(min-width: 62rem) 32rem, 92vw" loading="lazy" />
-                            </figure>
-                          ) : null
-                        )}
-                        <div class="demo__thumbs" role="group" aria-label="Screenshots">
+                      {s.demo.kind === 'shots' && (
+                        <div class="demo" data-shots>
                           {s.demo.shots.map((sh, i) =>
                             shot(sh.file) ? (
-                              <button type="button" data-thumb={i} aria-current={i === 0 ? 'true' : 'false'} title={sh.caption}>
-                                <Image src={shot(sh.file)!} alt={sh.caption} widths={[140]} sizes="4.4rem" loading="lazy" />
-                              </button>
+                              <figure class="demo__shot" data-shot-i={i} hidden={i > 0}>
+                                <Image src={shot(sh.file)!} alt={sh.caption} widths={[420, 840]} sizes="(min-width: 58rem) 30rem, 92vw" loading="lazy" />
+                              </figure>
                             ) : null
                           )}
+                          <div class="demo__thumbs" role="group" aria-label="Screenshots">
+                            {s.demo.shots.map((sh, i) =>
+                              shot(sh.file) ? (
+                                <button type="button" data-thumb={i} aria-current={i === 0 ? 'true' : 'false'} title={sh.caption}>
+                                  <Image src={shot(sh.file)!} alt={sh.caption} widths={[140]} sizes="4.4rem" loading="lazy" />
+                                </button>
+                              ) : null
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      )}
 
-                    <p class="demo__cap" data-shot-cap>
-                      {s.demo.kind === 'shots' ? s.demo.shots[0]?.caption : s.demo.caption}
-                    </p>
-
-                    <div class="ecam__prose" style="margin-top:1rem">
-                      {s.body.map((p) => (
-                        <p>{p}</p>
-                      ))}
+                      <p class="demo__cap" data-shot-cap>
+                        {s.demo.kind === 'shots' ? s.demo.shots[0]?.caption : s.demo.caption}
+                      </p>
                     </div>
+                  )}
+
+                  <div class="ecam__prose">
+                    {s.body.map((p) => (
+                      <p>{p}</p>
+                    ))}
                   </div>
-                )}
+                </div>
               </div>
 
               <dl class="ecam__rd">
@@ -230,9 +230,12 @@ const tabs = [{ slug: 'status', ident: 'STATUS' }, ...systems.map((s) => ({ slug
       </div>
     </div>
 
-    <p class="leg__lead" style="margin-top:2rem;font-size:var(--t-small)">
-      Everything else — coursework, experiments and older notebooks — is on
-      <a href="https://github.com/dager23" target="_blank" rel="noopener">GitHub</a>.
+    <p class="leg__lead ecam__note">
+      Everything else — coursework, experiments and older notebooks — is on <a
+        href="https://github.com/dager23"
+        target="_blank"
+        rel="noopener">GitHub</a
+      >.
     </p>
   </section>
 </Strato>
