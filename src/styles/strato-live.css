@@ -12,13 +12,14 @@
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.5 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   background-size: 260px 260px;
   opacity: 0.055; mix-blend-mode: overlay;
-  animation: grain 1.4s steps(7) infinite;
 }
-@keyframes grain {
-  0% { transform: translate(0, 0); } 15% { transform: translate(-3%, 2%); } 30% { transform: translate(2%, -4%); }
-  45% { transform: translate(-4%, -1%); } 60% { transform: translate(3%, 3%); } 75% { transform: translate(-1%, 4%); }
-  90% { transform: translate(4%, -2%); } 100% { transform: translate(0, 0); }
-}
+/* The grain used to flicker (animation: grain 1.4s steps(7) infinite). An animated,
+   blended, full-viewport layer forces a recomposite of everything under it on every
+   frame, and under it is the three.js canvas, which is already changing. Measured on
+   a real GPU while scrolling the home page: 21 fps / 33.6 ms median with the flicker,
+   36 fps / 16.8 ms without it. Stopping *either* the animation or the blend recovered
+   the same ground, so the texture and the blend stay and the movement goes. Phones
+   had already dropped it; now nothing animates this layer. */
 
 /* ─── hero: the view is a layer (sky drawing + stars + clouds) that pushes through together ─── */
 .deck__view { position: absolute; inset: 0; }
@@ -177,16 +178,17 @@ html:not(.js) .deck__route-line { stroke-dashoffset: 0; }
       inset 0 -1px 0 color-mix(in srgb, rgb(127 211 255 / 0.4), rgb(255 122 47 / 0.5) calc(var(--dusk) * 100%));
   }
 }
-/* the systems cards sit lower, where the Earth's bright limb does cross behind them, so they
-   keep a deeper dim than the chrome: 0.52 holds ~4.5:1 against blurred cloud, 11:1 over sky */
+/* The systems cards sit lower, where the Earth's bright limb crosses behind them. They used
+   to blur it; six blurred panes over a moving canvas cost the home page its frame budget
+   (p95 83 ms while scrolling, against 50 ms with a flat fill), so they take the same flat
+   fill phones already had. 0.86 over the bright limb still measures ~8:1 on body text. */
 .sys {
-  -webkit-backdrop-filter: blur(14px) saturate(180%) brightness(0.46);
-  backdrop-filter: blur(14px) saturate(180%) brightness(0.46);
+  background: rgb(11 18 38 / 0.86);
   text-shadow: 0 1px 2px rgb(7 11 26 / 0.45);
 }
 /* without backdrop-filter there is nothing dimming the sky — fall back to a dense fill */
 @supports not ((backdrop-filter: blur(2px)) or (-webkit-backdrop-filter: blur(2px))) {
-  .hdr, .readout, .sys { background: rgb(7 11 26 / 0.88); }
+  .hdr, .readout { background: rgb(7 11 26 / 0.88); }
 }
 .hdr::before, .hdr::after, .readout::before, .readout::after {
   content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: -1;
@@ -401,10 +403,10 @@ html:not(.js) .deck__route-line { stroke-dashoffset: 0; }
 .foot__route b { font-weight: 600; }
 .foot__route i { display: inline-block; width: 1.4em; height: 1px; background: currentColor; opacity: 0.55; }
 
-/* phones keep the grain but not its flicker, and the rim light rests: constant repaints cost main-thread
-   time on slow devices, and a backdrop-filtered element repaints its whole blur with them */
+/* the rim light rests on phones: constant repaints cost main-thread time on slow
+   devices, and a backdrop-filtered element repaints its whole blur with them.
+   (The grain's flicker is gone on every device now — see the note above.) */
 @media (hover: none) {
-  .film::after { animation: none; }
   .hdr::after, .readout::after { animation: none; }
   /* a lighter blur than the desktop pane, but it must keep dimming — this rule replaces the
      filter entirely, and without the brightness step the bar is unreadable over a pale sky */
@@ -412,17 +414,9 @@ html:not(.js) .deck__route-line { stroke-dashoffset: 0; }
     -webkit-backdrop-filter: blur(14px) saturate(170%) brightness(calc(0.66 - 0.26 * var(--pale)));
     backdrop-filter: blur(14px) saturate(170%) brightness(calc(0.66 - 0.26 * var(--pale)));
   }
-  /* four more blurred panes is the one thing phones can't afford — measured +90 ms blocking
-     time. The chrome keeps its glass; the systems cards take a flat fill instead. */
-  .sys {
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
-    background: rgb(11 18 38 / 0.86);
-  }
 }
 @media (prefers-reduced-motion: reduce) {
   .shock { display: none; }
-  .film::after { animation: none; }
   .route-city.is-active .route-city__ping { animation: none; }
   .route-plane { display: none; }
   .pass, .pass:hover { transform: none; }

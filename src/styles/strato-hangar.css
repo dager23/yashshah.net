@@ -11,10 +11,12 @@
   margin-top: 2.25rem;
   border-radius: 18px;
   padding: clamp(0.85rem, 2vw, 1.35rem);
-  background: rgb(5 9 20 / 0.55);
-  /* the limb crosses behind this panel in cruise: the same dim the .sys cards use */
-  -webkit-backdrop-filter: blur(14px) saturate(180%) brightness(0.46);
-  backdrop-filter: blur(14px) saturate(180%) brightness(0.46);
+  /* No backdrop-filter here, deliberately. This panel is ~1,100 px tall and the Earth
+     canvas behind it moves, so blurring it re-ran over the whole surface every frame:
+     33 ms per frame while scrolling, against 16.7 ms without. A flat fill at 0.86 keeps
+     a hint of sky and still measures 5.27:1 on the dimmest text over the bright limb —
+     and an ECAM screen is opaque anyway. */
+  background: rgb(7 11 26 / 0.86);
   text-shadow: 0 1px 2px rgb(7 11 26 / 0.45);
   box-shadow:
     inset 0 0 0 1px rgb(232 237 245 / 0.12),
@@ -630,8 +632,3 @@
   }
 }
 
-@supports not ((backdrop-filter: blur(2px)) or (-webkit-backdrop-filter: blur(2px))) {
-  .ecam {
-    background: rgb(7 11 26 / 0.9);
-  }
-}

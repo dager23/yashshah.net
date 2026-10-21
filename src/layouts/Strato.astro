@@ -51,7 +51,10 @@ const modelLive = false;
 
     <header class="hdr mono">
       <a class="hdr__id" href="/"><b>YS</b>{site.name}</a>
-      <nav aria-label="Primary">
+      <button class="hdr__menu" type="button" data-menu aria-expanded="false" aria-controls="primary-nav">
+        <span aria-hidden="true"></span>Menu
+      </button>
+      <nav id="primary-nav" aria-label="Primary">
         <i class="hdr__pill" aria-hidden="true"></i>
         <a href="/#waypoints">Projects</a>
         <a href="/hangar">Hangar</a>

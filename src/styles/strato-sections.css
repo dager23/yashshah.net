@@ -19,6 +19,23 @@
     0 12px 32px -14px rgb(7 11 26 / 0.85);
 }
 .hdr__id { text-decoration: none; display: flex; gap: 0.75em; align-items: center; }
+/* shown only on narrow screens (see the media query below) */
+.hdr__menu {
+  display: none; align-items: center; gap: 0.5em;
+  font: inherit; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--ink-light); cursor: pointer;
+  padding: 0.35rem 0.7rem; border-radius: 999px;
+  background: rgb(232 237 245 / 0.06);
+  border: 1px solid rgb(232 237 245 / 0.18);
+}
+.hdr__menu span {
+  width: 0.9rem; height: 0.55rem; position: relative;
+  border-top: 1px solid currentColor; border-bottom: 1px solid currentColor;
+}
+.hdr__menu span::after {
+  content: ''; position: absolute; inset: 50% 0 auto; height: 1px; background: currentColor;
+}
+.hdr[data-open] .hdr__menu { background: rgb(127 211 255 / 0.14); border-color: rgb(127 211 255 / 0.5); }
 .hdr__id b { color: var(--amber); font-weight: 600; }
 .hdr nav { display: flex; gap: clamp(0.75rem, 2vw, 1.75rem); }
 .hdr nav a { text-decoration: none; color: rgb(232 237 245 / 0.86); transition: color 0.25s; }
@@ -243,7 +260,24 @@ main { position: relative; z-index: 1; }
 
 /* ─── narrow screens: readout becomes a slim bar, path runs down one side ─── */
 @media (max-width: 767px) {
-  .hdr nav a:not(.keep) { display: none; }
+  /* the nav used to hide every link but the résumé here, which left the site
+     unnavigable on a phone. It becomes a sheet under the header instead. */
+  .hdr__menu { display: inline-flex; }
+  /* #id, not .hdr nav: strato-live.css loads after this file and sets
+     `.hdr nav { position: relative }`, which a media query alone can't outrank */
+  #primary-nav {
+    position: absolute; top: calc(100% + 0.5rem); right: 0; left: 0;
+    flex-direction: column; gap: 0.1rem; padding: 0.4rem;
+    border-radius: 14px;
+    background: rgb(7 11 26 / 0.95);
+    box-shadow: inset 0 0 0 1px rgb(232 237 245 / 0.14), 0 24px 48px -24px rgb(0 0 0 / 0.9);
+    opacity: 0; visibility: hidden; translate: 0 -0.4rem;
+    transition: opacity 0.22s var(--ease-out), translate 0.22s var(--ease-out), visibility 0.22s;
+  }
+  .hdr[data-open] #primary-nav { opacity: 1; visibility: visible; translate: 0 0; }
+  #primary-nav a { padding: 0.72rem 0.9rem; border-radius: 10px; }
+  #primary-nav a:hover, #primary-nav a:focus-visible { background: rgb(127 211 255 / 0.1); }
+  .hdr__pill { display: none; }
   /* under the floating header, as its own glass capsule */
   .readout {
     inset: 3.6rem 0.75rem auto; width: auto; padding: 0.4rem 0.8rem;

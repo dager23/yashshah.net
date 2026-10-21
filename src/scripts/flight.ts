@@ -473,6 +473,32 @@ function scrollToHash(hash: string, immediate = false): boolean {
   else el.scrollIntoView({ behavior: immediate || reduced ? 'auto' : 'smooth' });
   return true;
 }
+/* ─── the header's narrow-screen menu ──────────────────────────────────
+   On phones the nav is a sheet under the header rather than a row of links.
+   Delegated from the window, because the ClientRouter replaces the header on
+   every navigation and a listener bound to the element would go with it. */
+function setMenu(open: boolean): void {
+  const hdr = document.querySelector<HTMLElement>('.hdr');
+  if (!hdr) return;
+  hdr.toggleAttribute('data-open', open);
+  hdr.querySelector('[data-menu]')?.setAttribute('aria-expanded', open ? 'true' : 'false');
+}
+addEventListener('click', (e) => {
+  const t = e.target as Element | null;
+  if (t?.closest?.('[data-menu]')) {
+    setMenu(!document.querySelector('.hdr')?.hasAttribute('data-open'));
+    return;
+  }
+  // a link inside the sheet, or anything outside the header, closes it
+  if (!t?.closest?.('.hdr') || t.closest('.hdr nav a')) setMenu(false);
+});
+addEventListener('keydown', (e) => {
+  if ((e as KeyboardEvent).key !== 'Escape') return;
+  if (!document.querySelector('.hdr[data-open]')) return;
+  setMenu(false);
+  document.querySelector<HTMLElement>('.hdr [data-menu]')?.focus();
+});
+
 function onNavClick(e: MouseEvent): void {
   if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
   const a = (e.target as Element | null)?.closest?.<HTMLAnchorElement>('a[href*="#"]');
@@ -481,6 +507,7 @@ function onNavClick(e: MouseEvent): void {
   const url = new URL(a.href, location.href);
   if (url.origin !== location.origin || url.pathname !== location.pathname || !url.hash) return;
   if (!scrollToHash(url.hash)) return;
+  setMenu(false); // this click never bubbles (stopPropagation below), so close here too
   e.preventDefault();
   e.stopPropagation(); // capture phase on window: nothing else sees this click
   if (location.hash !== url.hash) history.replaceState(history.state, '', url.hash);
