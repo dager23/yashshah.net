@@ -9,12 +9,16 @@ import {
   AdditiveBlending, BackSide, Box3, BufferGeometry, CanvasTexture, CatmullRomCurve3, Color, DirectionalLight,
   Float32BufferAttribute, Group, Line, LineBasicMaterial, LineDashedMaterial, Mesh, MeshStandardMaterial,
   PerspectiveCamera, PMREMGenerator, Points, Scene, ShaderMaterial, SphereGeometry, Sprite,
-  SpriteMaterial, SRGBColorSpace, TextureLoader, Vector3, WebGLRenderer, ACESFilmicToneMapping,
+  SpriteMaterial, SRGBColorSpace, Texture, TextureLoader, Vector3, WebGLRenderer, ACESFilmicToneMapping,
 } from 'three';
 import { DESKTOP, MOBILE, isNarrow } from './path';
 import { getState, subscribe } from './store';
 
 const MODEL_URL: string | null = null; // e.g. '/models/concorde.glb' once processed
+/** how hard the city lights burn through ACES tone mapping — tuned by eye at cruise */
+const NIGHT_GAIN = 1.5;
+/** pointer parallax, in world units at the camera: enough to feel, too little to notice */
+const PAR_X = 1.1, PAR_Y = 0.5;
 
 const INSTR = new Color('#7fd3ff');
 const WARM = new Color('#f2a36b');
@@ -135,6 +139,11 @@ export function startScene(canvas: HTMLCanvasElement): boolean {
   // environment map is built only when the model loads — nothing else needs it
 
   const sun = new DirectionalLight(0xffffff, 2.2);
+  /* Placed per frame from the sun sprite's own direction (see the frame loop): the sun
+     rises out of the limb on the climb and sinks on the approach, so the Earth is lit by
+     the thing the visitor can see lighting it, and the terminator sweeps the globe as they
+     scroll. This is also what makes the night-side city lights appear at all — with a
+     fixed light the camera only ever saw a fully lit crescent. */
   sun.position.set(-20, 30, 25);
   const rim = new DirectionalLight(INSTR, 1.2); // horizon rim light (for the model)
   rim.position.set(10, -6, -20);
@@ -153,6 +162,56 @@ export function startScene(canvas: HTMLCanvasElement): boolean {
     earthMat.needsUpdate = true;
     dirty = true;
   });
+  /* Night side: NASA's Black Marble, added as emissive and masked to the dark half of the
+     terminator. An emissiveMap alone would glow in daylight too, so the mask is computed
+     per fragment from the world normal against the sun direction the scroll already moves. */
+  const night = {
+    uNight: { value: null as Texture | null },
+    uSunW: { value: new Vector3(0, 0, 1) },
+    uNightOn: { value: 0 }, // stays 0 until the texture lands, so there is nothing to pop
+  };
+  earthMat.onBeforeCompile = (shader) => {
+    Object.assign(shader.uniforms, night);
+    shader.vertexShader = shader.vertexShader
+      .replace(
+        '#include <common>',
+        `#include <common>
+        varying vec3 vNrmW; varying vec2 vNightUv;`
+      )
+      .replace(
+        '#include <begin_vertex>',
+        `#include <begin_vertex>
+        vNrmW = normalize(mat3(modelMatrix) * normal);
+        vNightUv = uv;`
+      );
+    shader.fragmentShader = shader.fragmentShader
+      .replace(
+        '#include <common>',
+        `#include <common>
+        uniform sampler2D uNight; uniform vec3 uSunW; uniform float uNightOn;
+        varying vec3 vNrmW; varying vec2 vNightUv;`
+      )
+      .replace(
+        '#include <emissivemap_fragment>',
+        `#include <emissivemap_fragment>
+        if (uNightOn > 0.001) {
+          // cities fade up through the terminator instead of switching on at it
+          float ndl = dot(normalize(vNrmW), normalize(uSunW));
+          totalEmissiveRadiance += texture2D(uNight, vNightUv).rgb * smoothstep(0.10, -0.18, ndl) * uNightOn;
+        }`
+      );
+  };
+  earthMat.customProgramCacheKey = () => 'earth-night';
+  /* The mask tracks the same direction that shades the globe, so cities can never glow on
+     ground the renderer is drawing in daylight. Updated in the frame loop with the light. */
+  new TextureLoader().load(mobile ? '/textures/earth-night-3k.webp' : '/textures/earth-night-4k.webp', (t) => {
+    t.colorSpace = SRGBColorSpace;
+    t.anisotropy = renderer.capabilities.getMaxAnisotropy();
+    night.uNight.value = t;
+    night.uNightOn.value = NIGHT_GAIN;
+    dirty = true;
+  });
+
   const globe = new Mesh(new SphereGeometry(1, mobile ? 48 : 96, mobile ? 32 : 64), earthMat);
   globe.rotation.set(0.35, -1.75, 0); // Indian Ocean under the limb
   earth.add(globe);
@@ -182,6 +241,7 @@ export function startScene(canvas: HTMLCanvasElement): boolean {
   corona.scale.setScalar(1200);
   scene.add(corona, sunDisc);
   const sunDir = new Vector3();
+  const lightDir = new Vector3(); // the key light's direction — see the frame loop
 
   /* ── stars: a dome behind the Earth; each one twinkles on its own phase, the dome drifts with scroll ── */
   const STAR_N = mobile ? 500 : 1400;
@@ -292,6 +352,7 @@ export function startScene(canvas: HTMLCanvasElement): boolean {
   /* ── state → scene ── */
   // declared before subscribe(): it fires immediately and kicks the loop
   let uTarget = getState().u, uNow = uTarget, bank = 0, ringT = -1, dirty = true, running = false, spin = 0;
+  let parTX = 0, parTY = 0, parX = 0, parY = 0; // pointer parallax: target and eased position
   let last = performance.now();
   const tmpA = new Vector3(), tmpB = new Vector3();
 
@@ -303,6 +364,15 @@ export function startScene(canvas: HTMLCanvasElement): boolean {
 
   function frame(dt: number): boolean {
     let busy = false;
+    // Parallax first: the Earth and the sun are both placed against camera.position below,
+    // so moving the camera afterwards would slide them with it and cancel the effect.
+    const pk = reduced ? 1 : 1 - Math.exp(-dt * 4);
+    parX += (parTX - parX) * pk;
+    parY += (parTY - parY) * pk;
+    camera.position.x = parX * PAR_X;
+    camera.position.y = -parY * PAR_Y;
+    if (Math.abs(parTX - parX) > 1e-3 || Math.abs(parTY - parY) > 1e-3) busy = true;
+
     const k = reduced ? 1 : 1 - Math.exp(-dt * 2.6); // inertia: heavy and sure
     const du = uTarget - uNow;
     uNow += du * k;
@@ -360,6 +430,18 @@ export function startScene(canvas: HTMLCanvasElement): boolean {
     sunDir.set(Math.sin(az) * Math.cos(el), Math.sin(el), -Math.cos(az) * Math.cos(el)).multiplyScalar(SUN_D).add(camera.position);
     sunDisc.position.copy(sunDir);
     corona.position.copy(sunDir);
+    // the key light is the sun the visitor can see: parallel light, so only its direction
+    // matters, and the night mask reads the same vector
+    /* The light leads the sprite. The sprite's elevation is composed — it clears the limb
+       and sits clear of the readout — and lighting the globe from that angle alone leaves
+       the Earth in twilight for most of the flight, which throws away the Blue Marble
+       detail. So the light climbs further than the disc does: the ground below is still
+       night on the climb (cities lit, dawn on the limb) and is in full daylight by cruise.
+       Nobody can see the discrepancy; a parallel light shows only its direction. */
+    const lightEl = el + ((44 * Math.PI) / 180) * rise;
+    lightDir.set(Math.sin(az) * Math.cos(lightEl), Math.sin(lightEl), -Math.cos(az) * Math.cos(lightEl));
+    sun.position.copy(lightDir).multiplyScalar(SUN_D).add(camera.position);
+    night.uSunW.value.copy(lightDir);
     const sunOn = smooth(0.03, 0.1, u);
     sunDisc.material.opacity = sunOn;
     corona.material.opacity = 0.5 * sunOn;
@@ -402,6 +484,19 @@ export function startScene(canvas: HTMLCanvasElement): boolean {
     requestAnimationFrame(loop);
   }
 
+  // pointer parallax is a desktop affection: phones have no pointer to follow, and it
+  // would fight the scroll on touch
+  if (!mobile && !reduced && matchMedia('(hover: hover)').matches) {
+    addEventListener(
+      'pointermove',
+      (e) => {
+        parTX = (e.clientX / innerWidth - 0.5) * 2;
+        parTY = (e.clientY / innerHeight - 0.5) * 2;
+        kick();
+      },
+      { passive: true }
+    );
+  }
   addEventListener('resize', () => { layout(); kick(); });
   document.addEventListener('visibilitychange', () => { if (!document.hidden) kick(); });
   layout();

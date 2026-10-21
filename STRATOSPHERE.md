@@ -65,6 +65,27 @@ Lower ECAM: one page per system, cycled by the button row the way an aircraft cy
 - **The cycle** (`src/scripts/hangar.ts`) owns the control row, the status table's links, the keyboard (← → Home End), the hash and both demo widgets. A same-document hash change never re-runs the module, so it listens for `hashchange` as well as `astro:page-load`. Links inside the display carry `data-ecam-link`, which `onNavClick` skips — see Navigation.
 - **No JavaScript**: every page is stacked and the table's links are ordinary in-page anchors.
 
+## The scene's light and the night side
+
+The globe is lit by a `DirectionalLight` whose direction is set per frame from the sun the
+visitor can actually see, so the terminator sweeps the Earth as they scroll. Two details are
+deliberate and easy to break:
+
+- **The light leads the disc.** The sun sprite's elevation is composed (it clears the limb and
+  sits clear of the readout); lighting the globe from that same low angle leaves the Earth in
+  twilight for most of the flight and throws away the Blue Marble detail. The light climbs a
+  further 44° on top of the sprite's, so the climb is night — cities lit, dawn on the limb —
+  and cruise is full daylight. A parallel light shows only its direction, so the discrepancy
+  is invisible.
+- **The night mask reads the light, never the sprite.** City lights (`earth-night-*.webp`,
+  NASA Black Marble) are added as emissive in a patched `MeshStandardMaterial`, masked by
+  `smoothstep` over the world normal against the light direction. Mask against the sprite
+  instead and cities glow on ground the renderer is drawing in daylight.
+
+Pointer parallax moves the camera a little over a second of easing, applied at the top of the
+frame — the Earth and the sun are both placed against `camera.position` further down, so
+moving the camera after them would slide the whole scene and cancel the effect. Desktop only.
+
 ## Adding the Concorde model
 
 The plane is a HUD flight-path marker until the sourced model is in place.

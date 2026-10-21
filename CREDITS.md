@@ -28,6 +28,8 @@ Searched with no Concorde found: Poly Pizza, Smithsonian Open Access (3d.si.edu)
 | --- | --- | --- | --- | --- |
 | Blue Marble: Next Generation w/ Topography and Bathymetry, December 2004 — `world.topo.bathy.200412.3x5400x2700.jpg` (2.45 MB) | <https://science.nasa.gov/earth/earth-observatory/blue-marble-next-generation/base-topography-bathymetry> | Reto Stöckli, NASA Earth Observatory | Public domain (NASA) | `public/textures/earth-4k.webp`, `earth-3k.webp`, `route-region.webp` (crop lon −15…145, lat 65…−5, darkened) |
 
+| Earth at Night 2012 (“Black Marble”) — `dnb_land_ocean_ice.2012.3600x1800.jpg` (776 KB) | <https://eoimages.gsfc.nasa.gov/images/imagerecords/79000/79765/dnb_land_ocean_ice.2012.3600x1800.jpg> | NASA Earth Observatory (Suomi NPP / VIIRS) | Public domain (NASA) | `public/textures/earth-night-4k.webp`, `earth-night-3k.webp` (city lights on the night side) |
+
 The original is kept out of git in `assets-src/earth/`; re-fetch it from the URL above.
 
 ## Fonts
