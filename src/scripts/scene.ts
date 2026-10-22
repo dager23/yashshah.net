@@ -10,11 +10,12 @@ import {
   Float32BufferAttribute, Group, Line, LineBasicMaterial, LineDashedMaterial, Mesh, MeshStandardMaterial,
   PerspectiveCamera, PMREMGenerator, Points, Scene, ShaderMaterial, SphereGeometry, Sprite,
   SpriteMaterial, SRGBColorSpace, Texture, TextureLoader, Vector3, WebGLRenderer, ACESFilmicToneMapping,
+  Matrix4,
 } from 'three';
 import { DESKTOP, MOBILE, isNarrow } from './path';
 import { getState, subscribe } from './store';
 
-const MODEL_URL: string | null = null; // e.g. '/models/concorde.glb' once processed
+const MODEL_URL: string | null = '/models/concorde.glb';
 /** how hard the city lights burn through ACES tone mapping — tuned by eye at cruise */
 const NIGHT_GAIN = 1.5;
 /** pointer parallax, in world units at the camera: enough to feel, too little to notice */
@@ -337,9 +338,20 @@ export function startScene(canvas: HTMLCanvasElement): boolean {
         m.scale.setScalar(2.6 / Math.max(size.x, size.y, size.z)); // wingtip-to-nose fits ~2.6 units
         box.setFromObject(m);
         m.position.sub(box.getCenter(new Vector3()));
+        /* The rig yaws the holder about Z and rolls it about X, so the model has to sit
+           nose along +X with its top facing the camera — the same plan view the marker
+           sprite presented. Set as an explicit basis rather than Euler angles: the source
+           is nose +Z / up +Y, and makeBasis states exactly where each local axis lands,
+           with no rotation-order ambiguity to get wrong.
+           This model's nose is along -Z (the fin sits at the +Z end), so -Z maps to +X:
+             local +X (wing)  → world -Y
+             local +Y (up)    → world +Z  (towards the camera)
+             local +Z (tail)  → world -X  (so the nose leads along the route) */
+        m.quaternion.setFromRotationMatrix(
+          new Matrix4().makeBasis(new Vector3(0, -1, 0), new Vector3(0, 0, 1), new Vector3(-1, 0, 0))
+        );
         const holder = new Group();
         holder.add(m);
-        // Nose axis and the droop-nose mesh are calibrated once the real file is inspected.
         rig.add(holder);
         model = holder;
         marker.visible = false;

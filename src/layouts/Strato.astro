@@ -23,8 +23,8 @@ const year = new Date().getFullYear();
 /** the header's Blog link appears with the first published post */
 const hasBlog = (await getPosts()).length > 0;
 
-/** Flip to true once the Sketchfab model is in public/models/ (see CREDITS.md). */
-const modelLive = false;
+/** The Concorde is in public/models/ — this adds the CC BY credit to the footer. */
+const modelLive = true;
 ---
 
 <!doctype html>
