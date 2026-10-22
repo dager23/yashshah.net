@@ -132,6 +132,36 @@ let els: {
   fill: HTMLElement | null; dawn: HTMLElement | null; dusk: HTMLElement | null;
 } = { mach: null, alt: null, wpt: null, fill: null, dawn: null, dusk: null };
 
+/**
+ * The sky tint: the two sky layers' opacity, and --dawn/--dusk for the glass
+ * chrome (strato-live.css).
+ *
+ * Written only when the value actually changes. A custom property on the root
+ * invalidates style for the whole document, and dawn is pinned at 0 from ~12% of
+ * the page and dusk until ~86% — so the entire cruise stretch was rewriting
+ * "0.000" every frame and paying a full style recalc for it. Worth doing, but a
+ * modest win: style recalc over one scroll of the home page went 538 ms → 489 ms.
+ * The rest is the design working — line reveals playing in, the odometer ticking,
+ * and Lenis toggling its own class on <html> (which invalidates everything). Don't
+ * go hunting here again without a trace showing something new.
+ */
+let lastDawn = '';
+let lastDusk = '';
+function skyTint(dawn: number, dusk: number): void {
+  const d = dawn.toFixed(3);
+  const k = dusk.toFixed(3);
+  if (d !== lastDawn) {
+    lastDawn = d;
+    if (els.dawn) els.dawn.style.opacity = d;
+    root.style.setProperty('--dawn', d);
+  }
+  if (k !== lastDusk) {
+    lastDusk = k;
+    if (els.dusk) els.dusk.style.opacity = k;
+    root.style.setProperty('--dusk', k);
+  }
+}
+
 let lastP = 0;
 function update(scrollP: number): void {
   lastP = scrollP;
@@ -140,13 +170,7 @@ function update(scrollP: number): void {
   const phase: Phase = st.parked ? 'cruise' : phaseOf(p);
   setState({ progress: p, u: st.parked ? 0.62 : toU(p), phase, waypoint: st.parked ? parkedIdent : activeWpt });
 
-  const dawn = st.parked ? 0 : 1 - smooth(keys.dawn0, keys.dawn1, p);
-  const dusk = st.parked ? 0 : smooth(keys.dusk0, keys.dusk1, p);
-  if (els.dawn) els.dawn.style.opacity = String(dawn);
-  if (els.dusk) els.dusk.style.opacity = String(dusk);
-  // the glass chrome tints with the sky (strato-live.css)
-  root.style.setProperty('--dawn', dawn.toFixed(3));
-  root.style.setProperty('--dusk', dusk.toFixed(3));
+  skyTint(st.parked ? 0 : 1 - smooth(keys.dawn0, keys.dawn1, p), st.parked ? 0 : smooth(keys.dusk0, keys.dusk1, p));
 
   odo(els.mach, mach(p).toFixed(2));
   const alt = Math.round(altitude(p) / 100) * 100;
@@ -425,6 +449,7 @@ function requestScene(): void {
 
 function initPage(): void {
   ctx?.revert();
+  lastDawn = lastDusk = ''; // the swap re-queries els and can drop the root's inline style
   activeLeg = 'gate';
   activeWpt = null;
   // pages without a flight plan (no gate) always park in cruise — never on the dawn sky
