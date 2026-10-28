@@ -17,6 +17,8 @@ interface Props {
 }
 
 const { title, description = site.tagline, path = Astro.url.pathname, parked } = Astro.props;
+/** marks the nav link for the page you're on — strato-sections.css already styles [aria-current] */
+const here = (href: string) => (path === href || path.startsWith(`${href}/`) ? 'page' : undefined);
 const pageTitle = title ? `${title} — ${site.name}` : `${site.name} — ${site.role}`;
 const canonical = new URL(path, Astro.site ?? 'https://yashshah.net').href.replace(/(.)\/$/, '$1');
 const year = new Date().getFullYear();
@@ -57,10 +59,10 @@ const modelLive = true;
       <nav id="primary-nav" aria-label="Primary">
         <i class="hdr__pill" aria-hidden="true"></i>
         <a href="/#waypoints">Projects</a>
-        <a href="/hangar">Hangar</a>
+        <a href="/hangar" aria-current={here('/hangar')}>Hangar</a>
         <a href="/#log">Experience</a>
         <a href="/#clearances">Honours</a>
-        {hasBlog && <a href="/blog">Blog</a>}
+        {hasBlog && <a href="/blog" aria-current={here('/blog')}>Blog</a>}
         <a class="keep" href={links.resume.href} target="_blank" rel="noopener">Résumé</a>
       </nav>
     </header>
