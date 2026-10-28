@@ -29,8 +29,10 @@ Thumbs.db
 # vercel
 .vercel
 
-# claude code local
-.claude/
+# claude code local — settings stay local, skills are versioned (they carry the
+# design-system overrides and the measured perf budget, not machine state)
+.claude/*
+!.claude/skills/
 
 .vercel
 .env*
